@@ -1,0 +1,8 @@
+(sym_lib_table
+  (lib (name SN74LV1T125DCKR)(type Legacy)(uri ${KIPRJMOD}/SN74LV1T125DCKR.lib)(options "")(descr ""))
+  (lib (name 8807-140-170LH)(type Legacy)(uri ${KIPRJMOD}/8807-140-170LH.lib)(options "")(descr ""))
+  (lib (name 74CB3T16211DGGR)(type Legacy)(uri ${KIPRJMOD}/74CB3T16211DGGR.lib)(options "")(descr ""))
+  (lib (name ztex_AB)(type Legacy)(uri ${KIPRJMOD}/ztex_AB.lib)(options "")(descr ""))
+  (lib (name ztex_CD)(type Legacy)(uri ${KIPRJMOD}/ztex_CD.lib)(options "")(descr ""))
+  (lib (name TPD12S016PWR)(type Legacy)(uri ${KIPRJMOD}/TPD12S016PWR.lib)(options "")(descr ""))
+)
