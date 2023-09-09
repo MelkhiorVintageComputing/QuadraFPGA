@@ -1117,8 +1117,6 @@ Text Notes 4700 1375 0    50   ~ 0
 needed?
 Text GLabel 4325 1475 2    50   Input ~ 0
 ~TBI
-Text Notes 4525 1475 0    50   ~ 0
-needed?
 Text GLabel 4325 1275 2    50   Input ~ 0
 ~TA
 Text GLabel 4325 1175 2    50   Input ~ 0
@@ -1133,10 +1131,6 @@ Text GLabel 9425 1075 2    50   Input ~ 0
 SC1
 Text GLabel 9425 975  2    50   Input ~ 0
 SC0
-Text Notes 9625 1100 0    50   ~ 0
-needed?
-Text Notes 9625 975  0    50   ~ 0
-needed?
 Text GLabel 8000 2400 2    50   Input ~ 0
 ~TRST
 Text Notes 8225 2425 0    50   ~ 0
@@ -1223,8 +1217,6 @@ Text Notes 7900 2100 0    50   ~ 0
 Test (part of JTAG ???)
 Text GLabel 10025 1825 2    50   Input ~ 0
 ~ANALOGRESET
-Text Notes 4575 5550 0    50   ~ 0
-needed?
 Text GLabel 4325 5550 2    50   Input ~ 0
 ~RSTQ
 Text Notes 8200 3000 0    50   ~ 0
@@ -1574,4 +1566,8 @@ F 3 "" H 6625 1100 50  0001 C CNN
 $EndComp
 Text Notes 9325 850  0    50   ~ 0
 Snooping
+Text Notes 9625 1000 0    50   ~ 0
+not needed
+Text Notes 9625 1100 0    50   ~ 0
+not needed
 $EndSCHEMATC
