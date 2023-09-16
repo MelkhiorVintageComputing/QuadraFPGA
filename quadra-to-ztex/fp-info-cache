@@ -1,4 +1,4 @@
-18545409636139899
+18547109340108899
 Battery
 BatteryHolder_Bulgin_BX0036_1xC
 Bulgin Battery Holder, BX0036, Battery Type C (https://www.bulgin.com/products/pub/media/bulgin/data/Battery_holders.pdf)
@@ -50686,6 +50686,13 @@ translated Allegro footprint
 0
 16
 16
+For_SeeedStudio
+SOP50P810X120-56N
+DGG (R-PDSO-G56)
+Integrated Circuit
+0
+56
+56
 For_SeeedStudio
 SOP65P640X120-20N
 

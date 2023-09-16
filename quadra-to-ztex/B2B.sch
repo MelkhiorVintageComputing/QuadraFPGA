@@ -677,12 +677,10 @@ Text GLabel 4100 3650 2    50   Input ~ 0
 ~TS_3V3
 Text GLabel 1600 3650 0    50   Input ~ 0
 ~MI_3V3
-Text GLabel 4100 3750 2    50   Input ~ 0
-TT0_3V3
 Text GLabel 1600 3750 0    50   Input ~ 0
+TT0_3V3
+Text GLabel 7400 3650 0    50   Input ~ 0
 TT1_3V3
-Text GLabel 4100 3850 2    50   Input ~ 0
-~MEMRESET_3V3
 Text GLabel 1600 3850 0    50   Input ~ 0
 ~RSTQ_3V3
 Text GLabel 1600 4050 0    50   Input ~ 0
@@ -709,5 +707,54 @@ Text GLabel 9900 3350 2    50   Input ~ 0
 PMOD-78+
 Text GLabel 9900 3150 2    50   Input ~ 0
 PMOD-910+
-NoConn ~ 1200 3650
+Text GLabel 7400 3550 0    50   Input ~ 0
+~BG_40SLOT_3V3
+Text GLabel 4100 3750 2    50   Input ~ 0
+~BR_40SLOT_3V3
+Text GLabel 4100 3850 2    50   Input ~ 0
+~BB_3V3
+$Comp
+L Device:C C?
+U 1 1 6507C211
+P 5050 6025
+AR Path="/5F69F4EF/6507C211" Ref="C?"  Part="1" 
+AR Path="/5F6B165A/6507C211" Ref="C?"  Part="1" 
+AR Path="/61B99D2C/6507C211" Ref="C?"  Part="1" 
+AR Path="/618E8C75/6507C211" Ref="C?"  Part="1" 
+AR Path="/631F3844/6507C211" Ref="C?"  Part="1" 
+AR Path="/6432B233/6507C211" Ref="C?"  Part="1" 
+AR Path="/65D4166B/6507C211" Ref="C16"  Part="1" 
+F 0 "C16" H 5075 6125 50  0000 L CNN
+F 1 "47uF 10V+" H 5075 5925 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric" H 5088 5875 50  0001 C CNN
+F 3 "" H 5050 6025 50  0000 C CNN
+F 4 "CL31A476MPHNNNE" H 5050 6025 50  0001 C CNN "MPN"
+F 5 "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Samsung-Electro-Mechanics-CL31A476MPHNNNE_C96123.html" H 5050 6025 50  0001 C CNN "URL"
+	1    5050 6025
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0158
+U 1 1 6507C217
+P 5050 6175
+F 0 "#PWR0158" H 5050 5925 50  0001 C CNN
+F 1 "GND" H 5055 6002 50  0000 C CNN
+F 2 "" H 5050 6175 50  0001 C CNN
+F 3 "" H 5050 6175 50  0001 C CNN
+	1    5050 6175
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR0159
+U 1 1 6507D249
+P 5050 5875
+F 0 "#PWR0159" H 5050 5725 50  0001 C CNN
+F 1 "+3.3V" H 5065 6048 50  0000 C CNN
+F 2 "" H 5050 5875 50  0001 C CNN
+F 3 "" H 5050 5875 50  0001 C CNN
+	1    5050 5875
+	1    0    0    -1  
+$EndComp
+Text Notes 4725 5600 0    50   ~ 0
+local bulk capacitance
 $EndSCHEMATC

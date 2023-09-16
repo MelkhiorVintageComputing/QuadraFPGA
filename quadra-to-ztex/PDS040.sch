@@ -1145,38 +1145,32 @@ Text GLabel 7900 3175 2    50   Input ~ 0
 ~MI_SLOT
 Text Notes 8275 3175 0    50   ~ 0
 needed?
-Text GLabel 7975 4050 2    50   Input ~ 0
+Text GLabel 4325 6450 2    50   Input ~ 0
 ~BG_40SLOT
-Text Notes 8475 4025 0    50   ~ 0
-needed?
-Text GLabel 8000 3900 2    50   Input ~ 0
+Text GLabel 7875 3600 2    50   Input ~ 0
 ~BR_CPU
-Text GLabel 8000 3775 2    50   Input ~ 0
+Text GLabel 7875 3475 2    50   Input ~ 0
 ~BG_CPU
-Text GLabel 7975 3650 2    50   Input ~ 0
+Text GLabel 4325 6350 2    50   Input ~ 0
 ~BR_40SLOT
-Text Notes 8350 3900 0    50   ~ 0
+Text Notes 8225 3600 0    50   ~ 0
 needed?
-Text Notes 8350 3775 0    50   ~ 0
+Text Notes 8225 3475 0    50   ~ 0
 needed?
-Text Notes 8450 3650 0    50   ~ 0
-needed?
-Text GLabel 7975 3525 2    50   Input ~ 0
+Text GLabel 4325 5650 2    50   Input ~ 0
 ~BB
-Text Notes 8150 3525 0    50   ~ 0
-needed?
 Text GLabel 4325 6150 2    50   Input ~ 0
 TT0
-Text GLabel 7975 4200 2    50   Input ~ 0
+Text GLabel 7975 3750 2    50   Input ~ 0
 ~LOCK
 Text GLabel 4325 6050 2    50   Input ~ 0
 TT1
-Text Notes 8250 4175 0    50   ~ 0
+Text Notes 8250 3725 0    50   ~ 0
 needed?
-Text GLabel 4325 5750 2    50   Input ~ 0
+Text GLabel 9725 3675 2    50   Input ~ 0
 ~MEMRESET
-Text Notes 4775 5750 0    50   ~ 0
-needed?
+Text Notes 10175 3675 0    50   ~ 0
+not needed?
 Text GLabel 7900 1075 2    50   Input ~ 0
 TLN0
 Text GLabel 7900 975  2    50   Input ~ 0
@@ -1523,8 +1517,6 @@ Text GLabel 3125 6150 0    50   Input ~ 0
 TT0_3V3
 Text GLabel 3125 6050 0    50   Input ~ 0
 TT1_3V3
-Text GLabel 3125 5650 0    50   Input ~ 0
-~MEMRESET_3V3
 Text GLabel 3125 5450 0    50   Input ~ 0
 ~RSTQ_3V3
 Text GLabel 3125 4250 0    50   Input ~ 0
@@ -1570,4 +1562,10 @@ Text Notes 9625 1000 0    50   ~ 0
 not needed
 Text Notes 9625 1100 0    50   ~ 0
 not needed
+Text GLabel 3125 6450 0    50   Input ~ 0
+~BG_40SLOT_3V3
+Text GLabel 3125 6350 0    50   Input ~ 0
+~BR_40SLOT_3V3
+Text GLabel 3125 5550 0    50   Input ~ 0
+~BB_3V3
 $EndSCHEMATC
