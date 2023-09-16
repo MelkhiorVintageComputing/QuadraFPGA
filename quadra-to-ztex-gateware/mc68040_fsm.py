@@ -6,7 +6,7 @@ from migen.fhdl.specials import Tristate
 import litex
 from litex.soc.interconnect import wishbone
 
-class MC68030_SYNC_FSM(Module):
+class MC68040_FSM(Module):
     def __init__(self, soc, wb_read, wb_write, dram_native_r, cd_cpu="cpu", trace_inst_fifo = None):
 
         platform = soc.platform
@@ -35,7 +35,6 @@ class MC68030_SYNC_FSM(Module):
         D_o = Signal(32)
         D_oe = Signal(reset = 0)
         self.specials += Tristate(D, D_o, D_oe, D_i)
-        D_latch = Signal(32)
 
         D_rev_i = Signal(32)
         D_rev_o = Signal(32)
@@ -344,7 +343,6 @@ class MC68030_SYNC_FSM(Module):
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
                       If(wb_read.ack,
-                         NextValue(D_latch, wb_read.dat_r),
                          D_oe.eq(1),
                          D_rev_o.eq(wb_read.dat_r),
                          TA_o_n.eq(0), # ACK
