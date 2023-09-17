@@ -18,9 +18,9 @@ class MC68040_FSM(Module):
         D = platform.request("D_3v3") # 32 # data, IO
         RW_n = platform.request("rw_3v3_n") #  direction of bus transfer with respect to the main processor, I [three-state, high read, write low]
         SIZ = platform.request("siz_3v3") # 2, I
-        CIOUT_n = platform.request("ciout_3v3_n") # cache inhibit out (from cpu), I
+        # CIOUT_n = platform.request("ciout_3v3_n") # cache inhibit out (from cpu), I
         TBI_n = platform.request("tbi_3v3_n") # Transfer Burst Inhibit, O
-        TPI_CPU_n = platform.request("tpi_cpu_3v3_n") #  I
+        TIP_CPU_n = platform.request("tip_cpu_3v3_n") #  I
         TA_n = platform.request("ta_3v3_n") # Transfer Acknowledge, O
         TEA_n = platform.request("tea_3v3_n") # Transfer Error Acknowledge, O
         TS_n = platform.request("ts_3v3_n") # Transfer Start, I
@@ -59,7 +59,7 @@ class MC68040_FSM(Module):
         self.comb += [ SIZ_i.eq(SIZ) ]
         
         TM_i = Signal(3)
-        self.comb += [ TT_i.eq(TM) ]
+        self.comb += [ TM_i.eq(TM) ]
         
         TT_i = Signal(2)
         self.comb += [ TT_i.eq(TT) ]
@@ -67,11 +67,11 @@ class MC68040_FSM(Module):
         TS_i_n = Signal()
         self.comb += [ TS_i_n.eq(TS_n) ]
         
-        TPI_CPU_i_n = Signal()
-        self.comb += [ TPI_CPU_i_n.eq(TPI_CPU_n) ]
+        TIP_CPU_i_n = Signal()
+        self.comb += [ TIP_CPU_i_n.eq(TIP_CPU_n) ]
         
-        CIOUT_i_n = Signal(1)
-        self.comb += [ CIOUT_i_n.eq(CIOUT_n) ]
+        #CIOUT_i_n = Signal(1)
+        #self.comb += [ CIOUT_i_n.eq(CIOUT_n) ]
 
         # force tristate
         TEA_i_n = Signal(1)
@@ -184,7 +184,6 @@ class MC68040_FSM(Module):
                       NextState("Idle")
         )
         slave_fsm.act("Idle",
-                      STERM_oe.eq(0),
                       D_oe.eq(0),
                       If(my_mem_space & ~TS_i_n & RW_i_n & SIZ_i[0] & ~SIZ_i[1], # Burst read to memory
                          TA_oe.eq(1),

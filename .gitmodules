@@ -1,0 +1,6 @@
+[submodule "quadra-to-ztex-gateware/VintageBusFPGA_Common"]
+	path = quadra-to-ztex-gateware/VintageBusFPGA_Common
+	url = git@github.com:rdolbeau/VintageBusFPGA_Common.git
+[submodule "quadra-to-ztex-gateware/hdl-util_hdmi"]
+	path = quadra-to-ztex-gateware/hdl-util_hdmi
+	url = https://github.com/hdl-util/hdmi
