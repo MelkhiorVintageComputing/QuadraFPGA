@@ -614,21 +614,21 @@ Text GLabel 7400 1650 0    50   Input ~ 0
 A7_3V3
 Text GLabel 9900 1750 2    50   Input ~ 0
 A10_3V3
-Text GLabel 7400 4050 0    50   Input ~ 0
-HDMI_CLK+
-Text GLabel 7400 3950 0    50   Input ~ 0
-HDMI_CLK-
-Text GLabel 9900 3950 2    50   Input ~ 0
-HDMI_D0+
 Text GLabel 9900 4050 2    50   Input ~ 0
+HDMI_CLK+
+Text GLabel 9900 3950 2    50   Input ~ 0
+HDMI_CLK-
+Text GLabel 7400 4050 0    50   Input ~ 0
+HDMI_D0+
+Text GLabel 7400 3950 0    50   Input ~ 0
 HDMI_D0-
-Text GLabel 7400 3850 0    50   Input ~ 0
-HDMI_D1+
-Text GLabel 7400 3750 0    50   Input ~ 0
-HDMI_D1-
 Text GLabel 9900 3750 2    50   Input ~ 0
-HDMI_D2+
+HDMI_D1+
 Text GLabel 9900 3850 2    50   Input ~ 0
+HDMI_D1-
+Text GLabel 7400 3750 0    50   Input ~ 0
+HDMI_D2+
+Text GLabel 7400 3850 0    50   Input ~ 0
 HDMI_D2-
 Text GLabel 7400 2050 0    50   Input ~ 0
 A29_3V3
