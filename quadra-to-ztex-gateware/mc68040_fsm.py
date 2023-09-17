@@ -185,6 +185,9 @@ class MC68040_FSM(Module):
         )
         slave_fsm.act("Idle",
                       D_oe.eq(0),
+                      TA_oe.eq(0),
+                      TEA_oe.eq(0),
+                      TBI_oe.eq(0),
                       If(my_mem_space & ~TS_i_n & RW_i_n & SIZ_i[0] & ~SIZ_i[1], # Burst read to memory
                          TA_oe.eq(1),
                          TA_o_n.eq(1),
@@ -215,7 +218,7 @@ class MC68040_FSM(Module):
                                 TA_o_n.eq(0), 
                                 NextState("BurstWrite"),
                              ),
-                      ).Elif((my_device_space & ~TS_i_n & RW_i_n & (~SIZ_i[0] | ~SIZ_i[1])), # non-line Read
+                      ).Elif((my_device_space & ~TS_i_n & RW_i_n & (~SIZ_i[0] | ~SIZ_i[1])), # non-burst Read
                          TA_oe.eq(1),
                          TA_o_n.eq(1),
                          TEA_oe.eq(1),
@@ -231,7 +234,7 @@ class MC68040_FSM(Module):
                             NextValue(A_latch, processed_ad),
                             NextState("Read"),
                          ),
-                      ).Elif((my_device_space & ~TS_i_n & ~RW_i_n & (~SIZ_i[0] | ~SIZ_i[1])), # non-line Write
+                      ).Elif((my_device_space & ~TS_i_n & ~RW_i_n & (~SIZ_i[0] | ~SIZ_i[1])), # non-burst Write
                              TA_oe.eq(1),
                              TA_o_n.eq(1),
                              TEA_oe.eq(1),
@@ -241,10 +244,10 @@ class MC68040_FSM(Module):
                              write_fifo_din.adr.eq(processed_ad),
                              Case(SIZ_i, {
                                  0x0: [ # long word
-                                     Case(processed_ad[0:2], {
-                                         0x0: [
-                                              write_fifo_din.sel.eq(0xF),
-                                         ],
+                                     #Case(processed_ad[0:2], {
+                                     #    0x0: [
+                                     write_fifo_din.sel.eq(0xF),
+                                     #    ],
                                          #0x1: [
                                          #     write_fifo_din.sel.eq(0xE), # not on '040
                                          #],
@@ -254,7 +257,7 @@ class MC68040_FSM(Module):
                                          #0x3: [
                                          #     write_fifo_din.sel.eq(0x8), # not on '040
                                          #],
-                                     }),
+                                     #}),
                                  ],
                                  0x1: [ # byte
                                      Case(processed_ad[0:2], {
@@ -288,28 +291,12 @@ class MC68040_FSM(Module):
                                          #],
                                      }),
                                  ],
-                                 #0x3: [ # 3-bytes  # not on '040 where it's a full line
-                                 #    Case(processed_ad[0:2], {
-                                 #        0x0: [
-                                 #             write_fifo_din.sel.eq(0x7),
-                                 #        ],
-                                 #        0x1: [
-                                 #             write_fifo_din.sel.eq(0xE),
-                                 #        ],
-                                 #        0x2: [
-                                 #             write_fifo_din.sel.eq(0xC),
-                                 #        ],
-                                 #        0x3: [
-                                 #             write_fifo_din.sel.eq(0x8),
-                                 #        ],
-                                 #    }),
-                                 #],
                                  0x3: [ # line
-                                     Case(processed_ad[0:2], {
-                                         0x0: [
-                                              write_fifo_din.sel.eq(0xF),
-                                             TBI_o_n.eq(0), # don't burst write for now
-                                         ],
+                                     #Case(processed_ad[0:2], {
+                                     #    0x0: [
+                                     write_fifo_din.sel.eq(0xF),
+                                     TBI_o_n.eq(0), # don't burst write for now
+                                     #    ],
                                          #0x1: [
                                          #     write_fifo_din.sel.eq(0xE),
                                          #],
@@ -319,7 +306,7 @@ class MC68040_FSM(Module):
                                          #0x3: [
                                          #     write_fifo_din.sel.eq(0x8),
                                          #],
-                                     }),
+                                     #}),
                                  ],
                              }),
                              If(write_fifo.writable,

@@ -59,14 +59,14 @@ _io = [
 _pds040_io_v1_0 = [
     # HDMI
     ("hdmi", 0,
-        Subsignal("clk_p",   Pins("K3"), IOStandard("TMDS_33")),
-        Subsignal("clk_n",   Pins("L3"), IOStandard("TMDS_33")),
-        Subsignal("data0_p", Pins("M1"), IOStandard("TMDS_33")),
-        Subsignal("data0_n", Pins("L1"), IOStandard("TMDS_33")),
-        Subsignal("data1_p", Pins("L4"), IOStandard("TMDS_33")),
-        Subsignal("data1_n", Pins("K5"), IOStandard("TMDS_33")),
-        Subsignal("data2_p", Pins("N2"), IOStandard("TMDS_33")),
-        Subsignal("data2_n", Pins("N1"), IOStandard("TMDS_33")),
+        Subsignal("clk_p",   Pins("L1"), IOStandard("TMDS_33")),
+        Subsignal("clk_n",   Pins("M1"), IOStandard("TMDS_33")),
+        Subsignal("data0_p", Pins("L3"), IOStandard("TMDS_33")),
+        Subsignal("data0_n", Pins("L3"), IOStandard("TMDS_33")), 
+        Subsignal("data1_p", Pins("N2"), IOStandard("TMDS_33")),
+        Subsignal("data1_n", Pins("N1"), IOStandard("TMDS_33")),
+        Subsignal("data2_p", Pins("K5"), IOStandard("TMDS_33")),
+        Subsignal("data2_n", Pins("L4"), IOStandard("TMDS_33")),
         #Subsignal("hpd",     Pins(""), IOStandard("LVCMOS33")),
         #Subsignal("sda",     Pins(""), IOStandard("LVCMOS33")),
         #Subsignal("scl",     Pins(""), IOStandard("LVCMOS33")),
@@ -90,7 +90,7 @@ _pds040_pds040_v1_0 = [
                                    "T5  J13 H15 R8  H14 J14 T4  G14 "
                                    "H17 R7  G16 G17 U4  T6  U3  G18"), IOStandard("lvttl")),
     ("D_3v3",              0, Pins("B16 L5  C15 D15 L6  A18 B18 M6  "
-                                   "C17 C16 N6  E16 E15 R33 F14 F13 "
+                                   "C17 C16 N6  E16 E15 R3  F14 F13 "
                                    "K6  T3  U2  U1  V2  G13 D17 V1  "
                                    "D18 E17 R5  E18 F15 R6  F18 F16"), IOStandard("lvttl")),
     ("nmrq6_3v3_n",        0, Pins("B11"), IOStandard("lvttl")),

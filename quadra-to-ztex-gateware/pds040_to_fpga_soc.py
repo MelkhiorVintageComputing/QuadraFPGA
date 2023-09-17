@@ -72,7 +72,7 @@ class _CRG(Module):
         self.cd_cpu.clk = clk_cpu
         rst_cpu_n = platform.request("rstq_3v3_n")
         self.comb += self.cd_cpu.rst.eq(~rst_cpu_n)
-        platform.add_platform_command("create_clock -name cpu_clk -period 40.0 -waveform {{0.0 20.0}} [get_ports cpuclk_3v3_n]") # fixme: pretend it's 25 MHz for now
+        platform.add_platform_command("create_clock -name cpu_clk -period 25.0 -waveform {{0.0 12.5}} [get_ports aux_cpuclk_3v3]") # fixme: pretend it's 40 MHz for now
         
         #led = platform.request("user_led", 0)
         #self.comb += [ led.eq(~rst_cpu_n) ]
