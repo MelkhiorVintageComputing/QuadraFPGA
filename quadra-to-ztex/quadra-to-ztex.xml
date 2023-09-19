@@ -2,7 +2,7 @@
 <export version="D">
   <design>
     <source>/home/dolbeau/MAC/QuadraFPGA/quadra-to-ztex/quadra-to-ztex.sch</source>
-    <date>Sun Sep 17 09:48:37 2023</date>
+    <date>Sun Sep 17 15:23:37 2023</date>
     <tool>Eeschema 5.1.9+dfsg1-1~bpo10+1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -234,6 +234,7 @@
       <footprint>For_SeeedStudio:PinHeader_2x32_P2.54mm_Vertical_For_SeeedStudio</footprint>
       <fields>
         <field name="MPN">77313-824-64LF</field>
+        <field name="MPN-ALT">X6521WV-2x32H-C30D60</field>
       </fields>
       <libsource lib="ztex_CD" part="ZTEX_CD" description=""/>
       <sheetpath names="/B2B/" tstamps="/65D4166B/"/>
@@ -313,6 +314,7 @@
       <footprint>For_SeeedStudio:PinHeader_2x32_P2.54mm_Vertical_For_SeeedStudio</footprint>
       <fields>
         <field name="MPN">77313-824-64LF</field>
+        <field name="MPN-ALT">X6521WV-2x32H-C30D60</field>
       </fields>
       <libsource lib="ztex_AB" part="ZTEX_AB" description=""/>
       <sheetpath names="/B2B/" tstamps="/65D4166B/"/>
@@ -1829,12 +1831,12 @@
       <node ref="IC2" pin="10"/>
     </net>
     <net code="179" name="A2_3V3">
-      <node ref="JCD1" pin="8"/>
       <node ref="IC1" pin="25"/>
+      <node ref="JCD1" pin="8"/>
     </net>
     <net code="180" name="A12_3V3">
-      <node ref="IC1" pin="13"/>
       <node ref="JAB1" pin="7"/>
+      <node ref="IC1" pin="13"/>
     </net>
     <net code="181" name="A11_3V3">
       <node ref="JAB1" pin="8"/>
@@ -1853,8 +1855,8 @@
       <node ref="IC1" pin="18"/>
     </net>
     <net code="185" name="A7_3V3">
-      <node ref="IC1" pin="20"/>
       <node ref="JCD1" pin="11"/>
+      <node ref="IC1" pin="20"/>
     </net>
     <net code="186" name="A5_3V3">
       <node ref="IC1" pin="21"/>
@@ -1869,12 +1871,12 @@
       <node ref="JCD1" pin="10"/>
     </net>
     <net code="189" name="A3_3V3">
-      <node ref="JCD1" pin="7"/>
       <node ref="IC1" pin="24"/>
+      <node ref="JCD1" pin="7"/>
     </net>
     <net code="190" name="A13_3V3">
-      <node ref="IC1" pin="12"/>
       <node ref="JCD1" pin="13"/>
+      <node ref="IC1" pin="12"/>
     </net>
     <net code="191" name="A1_3V3">
       <node ref="JCD1" pin="5"/>
@@ -1885,12 +1887,12 @@
       <node ref="JCD1" pin="6"/>
     </net>
     <net code="193" name="AUX_CPUCLK_3V3">
-      <node ref="IC1" pin="28"/>
       <node ref="JAB1" pin="20"/>
+      <node ref="IC1" pin="28"/>
     </net>
     <net code="194" name="A22">
-      <node ref="U14" pin="85"/>
       <node ref="IC1" pin="54"/>
+      <node ref="U14" pin="85"/>
     </net>
     <net code="195" name="A21">
       <node ref="U14" pin="14"/>
@@ -1913,8 +1915,8 @@
       <node ref="U14" pin="82"/>
     </net>
     <net code="200" name="A16">
-      <node ref="U14" pin="81"/>
       <node ref="IC1" pin="47"/>
+      <node ref="U14" pin="81"/>
     </net>
     <net code="201" name="Net-(IC1-Pad1)">
       <node ref="IC1" pin="1"/>
@@ -1996,8 +1998,8 @@
       <node ref="IC1" pin="44"/>
     </net>
     <net code="221" name="A12">
-      <node ref="U14" pin="79"/>
       <node ref="IC1" pin="43"/>
+      <node ref="U14" pin="79"/>
     </net>
     <net code="222" name="A11">
       <node ref="U14" pin="8"/>
@@ -2048,48 +2050,48 @@
       <node ref="J1" pin="10"/>
       <node ref="JAB1" pin="61"/>
     </net>
-    <net code="236" name="HDMI_D0-">
-      <node ref="J2" pin="9"/>
-      <node ref="U1" pin="17"/>
+    <net code="236" name="HDMI_CLK+">
       <node ref="JCD1" pin="60"/>
+      <node ref="J2" pin="10"/>
+      <node ref="U1" pin="16"/>
     </net>
     <net code="237" name="Net-(J1-Pad12)">
       <node ref="J1" pin="12"/>
     </net>
     <net code="238" name="FPGA_JTAG_TMS">
-      <node ref="JCD1" pin="62"/>
       <node ref="J1" pin="4"/>
+      <node ref="JCD1" pin="62"/>
     </net>
-    <net code="239" name="HDMI_D0+">
-      <node ref="U1" pin="18"/>
+    <net code="239" name="HDMI_CLK-">
       <node ref="JCD1" pin="58"/>
-      <node ref="J2" pin="7"/>
+      <node ref="U1" pin="15"/>
+      <node ref="J2" pin="12"/>
     </net>
-    <net code="240" name="HDMI_D2-">
-      <node ref="J2" pin="3"/>
-      <node ref="U1" pin="22"/>
+    <net code="240" name="HDMI_D1-">
+      <node ref="U1" pin="20"/>
       <node ref="JCD1" pin="56"/>
+      <node ref="J2" pin="6"/>
     </net>
-    <net code="241" name="HDMI_D2+">
-      <node ref="U1" pin="23"/>
+    <net code="241" name="HDMI_D1+">
+      <node ref="J2" pin="4"/>
+      <node ref="U1" pin="21"/>
       <node ref="JCD1" pin="54"/>
-      <node ref="J2" pin="1"/>
     </net>
     <net code="242" name="PMOD-56-">
       <node ref="JCD1" pin="52"/>
       <node ref="J3" pin="5"/>
     </net>
     <net code="243" name="PMOD-56+">
-      <node ref="J3" pin="6"/>
       <node ref="JCD1" pin="50"/>
+      <node ref="J3" pin="6"/>
     </net>
     <net code="244" name="PMOD-78-">
       <node ref="J3" pin="7"/>
       <node ref="JCD1" pin="48"/>
     </net>
     <net code="245" name="PMOD-78+">
-      <node ref="J3" pin="8"/>
       <node ref="JCD1" pin="46"/>
+      <node ref="J3" pin="8"/>
     </net>
     <net code="246" name="PMOD-910-">
       <node ref="JCD1" pin="44"/>
@@ -2100,8 +2102,8 @@
       <node ref="J3" pin="10"/>
     </net>
     <net code="248" name="PMOD-1112-">
-      <node ref="JCD1" pin="40"/>
       <node ref="J3" pin="11"/>
+      <node ref="JCD1" pin="40"/>
     </net>
     <net code="249" name="/B2B/JTAG_VIO">
       <node ref="J1" pin="2"/>
@@ -2109,10 +2111,10 @@
     <net code="250" name="Net-(J1-Pad14)">
       <node ref="J1" pin="14"/>
     </net>
-    <net code="251" name="HDMI_D1-">
+    <net code="251" name="HDMI_D2+">
+      <node ref="J2" pin="1"/>
+      <node ref="U1" pin="23"/>
       <node ref="JCD1" pin="53"/>
-      <node ref="U1" pin="20"/>
-      <node ref="J2" pin="6"/>
     </net>
     <net code="252" name="Net-(JCD1-Pad1)">
       <node ref="JCD1" pin="1"/>
@@ -2128,24 +2130,24 @@
       <node ref="JCD1" pin="61"/>
       <node ref="J1" pin="8"/>
     </net>
-    <net code="256" name="HDMI_CLK+">
+    <net code="256" name="HDMI_D0+">
       <node ref="JCD1" pin="59"/>
-      <node ref="J2" pin="10"/>
-      <node ref="U1" pin="16"/>
+      <node ref="J2" pin="7"/>
+      <node ref="U1" pin="18"/>
     </net>
-    <net code="257" name="HDMI_CLK-">
-      <node ref="J2" pin="12"/>
-      <node ref="U1" pin="15"/>
+    <net code="257" name="HDMI_D0-">
       <node ref="JCD1" pin="57"/>
+      <node ref="J2" pin="9"/>
+      <node ref="U1" pin="17"/>
     </net>
-    <net code="258" name="HDMI_D1+">
+    <net code="258" name="HDMI_D2-">
+      <node ref="J2" pin="3"/>
+      <node ref="U1" pin="22"/>
       <node ref="JCD1" pin="55"/>
-      <node ref="J2" pin="4"/>
-      <node ref="U1" pin="21"/>
     </net>
     <net code="259" name="Net-(D1-Pad2)">
-      <node ref="R2" pin="2"/>
       <node ref="D1" pin="2"/>
+      <node ref="R2" pin="2"/>
     </net>
     <net code="260" name="/hdmi/HDMI_5V">
       <node ref="J2" pin="18"/>
