@@ -5,4 +5,5 @@
   (lib (name ztex_AB)(type Legacy)(uri ${KIPRJMOD}/ztex_AB.lib)(options "")(descr ""))
   (lib (name ztex_CD)(type Legacy)(uri ${KIPRJMOD}/ztex_CD.lib)(options "")(descr ""))
   (lib (name TPD12S016PWR)(type Legacy)(uri ${KIPRJMOD}/TPD12S016PWR.lib)(options "")(descr ""))
+  (lib (name logo)(type Legacy)(uri ${KIPRJMOD}/logo.lib)(options "")(descr ""))
 )

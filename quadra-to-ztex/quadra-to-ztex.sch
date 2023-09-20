@@ -37,4 +37,15 @@ U 65E2A490
 F0 "pmod" 50
 F1 "pmod.sch" 50
 $EndSheet
+$Comp
+L logo:LogoLitex GRAPHIC1
+U 1 1 650B8858
+P 3500 1275
+F 0 "GRAPHIC1" H 3728 1271 50  0000 L CNN
+F 1 "LogoLitex" H 3728 1180 50  0000 L CNN
+F 2 "For_SeeedStudio:litex_logo" H 3500 1275 50  0001 C CNN
+F 3 "" H 3500 1275 50  0001 C CNN
+	1    3500 1275
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
