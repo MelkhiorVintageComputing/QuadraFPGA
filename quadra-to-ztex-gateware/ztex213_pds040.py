@@ -61,7 +61,7 @@ _pds040_io_v1_0 = [
     ("hdmi", 0,
         Subsignal("clk_p",   Pins("L1"), IOStandard("TMDS_33")),
         Subsignal("clk_n",   Pins("M1"), IOStandard("TMDS_33")),
-        Subsignal("data0_p", Pins("L3"), IOStandard("TMDS_33")),
+        Subsignal("data0_p", Pins("K3"), IOStandard("TMDS_33")),
         Subsignal("data0_n", Pins("L3"), IOStandard("TMDS_33")), 
         Subsignal("data1_p", Pins("N2"), IOStandard("TMDS_33")),
         Subsignal("data1_n", Pins("N1"), IOStandard("TMDS_33")),

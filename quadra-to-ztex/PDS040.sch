@@ -612,10 +612,7 @@ F 12 "SN74CB3T16211DGGR" H 1000 1000 50  0001 C CNN "MPN"
 	1    1000 1000
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	1025 2600 1000 2600
 Connection ~ 875  2600
-Connection ~ 1000 2600
 Wire Wire Line
 	1000 2600 875  2600
 $Comp
@@ -752,10 +749,7 @@ F 12 "SN74CB3T16211DGGR" H 1000 4175 50  0001 C CNN "MPN"
 	1    1000 4175
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	1025 5775 1000 5775
 Connection ~ 875  5775
-Connection ~ 1000 5775
 Wire Wire Line
 	1000 5775 875  5775
 $Comp
@@ -892,12 +886,6 @@ F 12 "SN74CB3T16211DGGR" H 3125 975 50  0001 C CNN "MPN"
 	1    3125 975 
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3150 2575 3125 2575
-Connection ~ 3000 2575
-Connection ~ 3125 2575
-Wire Wire Line
-	3125 2575 3000 2575
 $Comp
 L power:GND #PWR0120
 U 1 1 6505C442
@@ -969,7 +957,7 @@ Text GLabel 2200 6175 2    50   Input ~ 0
 A31
 Text GLabel 6350 1450 0    50   Input ~ 0
 ~PDS_SLOT_E_EN
-NoConn ~ 14775 2750
+NoConn ~ 12725 2825
 Text GLabel 2200 3700 2    50   Input ~ 0
 AUX_CPUCLK
 Text GLabel 2200 6275 2    50   Input ~ 0
@@ -1292,10 +1280,7 @@ F 12 "SN74CB3T16211DGGR" H 3125 4150 50  0001 C CNN "MPN"
 	1    3125 4150
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3150 5750 3125 5750
 Connection ~ 3000 5750
-Connection ~ 3125 5750
 Wire Wire Line
 	3125 5750 3000 5750
 $Comp
@@ -1568,4 +1553,7 @@ Text GLabel 3125 6350 0    50   Input ~ 0
 ~BR_40SLOT_3V3
 Text GLabel 3125 5550 0    50   Input ~ 0
 ~BB_3V3
+Wire Wire Line
+	3125 2575 3000 2575
+Connection ~ 3000 2575
 $EndSCHEMATC
