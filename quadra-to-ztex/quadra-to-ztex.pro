@@ -1,4 +1,4 @@
-update=Thu Aug 31 09:37:24 2023
+update=Sun Oct  8 15:33:21 2023
 version=1
 last_client=kicad
 [general]
@@ -25,7 +25,7 @@ ERC_TestSimilarLabels=1
 [pcbnew]
 version=1
 PageLayoutDescrFile=
-LastNetListRead=
+LastNetListRead=quadra-to-ztex.net
 CopperLayerCount=4
 BoardThickness=1.6
 AllowMicroVias=0
@@ -67,7 +67,7 @@ OthersTextUpright=1
 SolderMaskClearance=0
 SolderMaskMinWidth=0
 SolderPasteClearance=0
-SolderPasteRatio=-0
+SolderPasteRatio=0
 [pcbnew/Layer.F.Cu]
 Name=F.Cu
 Type=0

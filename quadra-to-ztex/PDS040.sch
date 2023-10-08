@@ -1556,4 +1556,6 @@ Text GLabel 3125 5550 0    50   Input ~ 0
 Wire Wire Line
 	3125 2575 3000 2575
 Connection ~ 3000 2575
+Text Notes 10325 1375 2    50   ~ 0
+ATTN:\n"Devices that transfer data on the system bus,\nsuch as PDS bus masters, must drive the snoop\ncontrol pins (SCO and SCl) to indicate no snooping"
 $EndSCHEMATC
