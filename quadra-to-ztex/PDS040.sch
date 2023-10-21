@@ -1086,10 +1086,10 @@ L Device:R R1
 U 1 1 65079040
 P 6500 1450
 F 0 "R1" V 6293 1450 50  0000 C CNN
-F 1 "10k" V 6384 1450 50  0000 C CNN
+F 1 "0" V 6384 1450 50  0000 C CNN
 F 2 "Resistor_SMD:R_0402_1005Metric" V 6430 1450 50  0001 C CNN
 F 3 "~" H 6500 1450 50  0001 C CNN
-F 4 "0402WGF1002TCE" V 6500 1450 50  0001 C CNN "MPN"
+F 4 "0402WGF0000TCE" V 6500 1450 50  0001 C CNN "MPN"
 	1    6500 1450
 	0    1    1    0   
 $EndComp
@@ -1558,4 +1558,96 @@ Wire Wire Line
 Connection ~ 3000 2575
 Text Notes 10325 1375 2    50   ~ 0
 ATTN:\n"Devices that transfer data on the system bus,\nsuch as PDS bus masters, must drive the snoop\ncontrol pins (SCO and SCl) to indicate no snooping"
+Wire Wire Line
+	3125 4650 3125 4750
+Wire Wire Line
+	3125 4950 3125 5050
+Connection ~ 3125 5050
+Wire Wire Line
+	3125 5050 3125 5150
+Connection ~ 3125 5150
+Wire Wire Line
+	3125 5150 3125 5250
+Connection ~ 3125 5250
+Wire Wire Line
+	3125 5250 3125 5350
+$Comp
+L power:GND #PWR?
+U 1 1 65E4D5E1
+P 3125 4650
+F 0 "#PWR?" H 3125 4400 50  0001 C CNN
+F 1 "GND" H 3130 4477 50  0000 C CNN
+F 2 "" H 3125 4650 50  0001 C CNN
+F 3 "" H 3125 4650 50  0001 C CNN
+	1    3125 4650
+	0    1    -1   0   
+$EndComp
+Connection ~ 3125 4650
+$Comp
+L power:GND #PWR?
+U 1 1 65E4D743
+P 3125 4950
+F 0 "#PWR?" H 3125 4700 50  0001 C CNN
+F 1 "GND" H 3130 4777 50  0000 C CNN
+F 2 "" H 3125 4950 50  0001 C CNN
+F 3 "" H 3125 4950 50  0001 C CNN
+	1    3125 4950
+	0    1    -1   0   
+$EndComp
+Connection ~ 3125 4950
+$Comp
+L power:GND #PWR?
+U 1 1 65E4D996
+P 3125 5650
+F 0 "#PWR?" H 3125 5400 50  0001 C CNN
+F 1 "GND" H 3130 5477 50  0000 C CNN
+F 2 "" H 3125 5650 50  0001 C CNN
+F 3 "" H 3125 5650 50  0001 C CNN
+	1    3125 5650
+	0    1    -1   0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 65E4DC41
+P 3125 5850
+F 0 "#PWR?" H 3125 5600 50  0001 C CNN
+F 1 "GND" H 3130 5677 50  0000 C CNN
+F 2 "" H 3125 5850 50  0001 C CNN
+F 3 "" H 3125 5850 50  0001 C CNN
+	1    3125 5850
+	0    1    -1   0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 65E4DEBC
+P 3125 6250
+F 0 "#PWR?" H 3125 6000 50  0001 C CNN
+F 1 "GND" H 3130 6077 50  0000 C CNN
+F 2 "" H 3125 6250 50  0001 C CNN
+F 3 "" H 3125 6250 50  0001 C CNN
+	1    3125 6250
+	0    1    -1   0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 65E4E1A4
+P 3125 6550
+F 0 "#PWR?" H 3125 6300 50  0001 C CNN
+F 1 "GND" H 3130 6377 50  0000 C CNN
+F 2 "" H 3125 6550 50  0001 C CNN
+F 3 "" H 3125 6550 50  0001 C CNN
+	1    3125 6550
+	0    1    -1   0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 65E4E3F8
+P 3125 6750
+F 0 "#PWR?" H 3125 6500 50  0001 C CNN
+F 1 "GND" H 3130 6577 50  0000 C CNN
+F 2 "" H 3125 6750 50  0001 C CNN
+F 3 "" H 3125 6750 50  0001 C CNN
+	1    3125 6750
+	0    1    -1   0   
+$EndComp
 $EndSCHEMATC
