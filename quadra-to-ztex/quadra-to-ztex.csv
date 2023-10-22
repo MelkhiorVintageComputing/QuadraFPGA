@@ -1,5 +1,6 @@
 Part/Designator,Manufacture Part Number/Seeed SKU,Quantity,URL,LCSC ref
-"R1,R4",0402WGF1002TCE,2,,
+R1,0402WGF0000TCE,1,,
+R4,0402WGF1002TCE,1,,
 R2,0402WGF6800TCE,1,,
 J2,10029449-111RLF,1,https://www.lcsc.com/product-detail/D-Sub-DVI-HDMI-Connectors_Amphenol-ICC-10029449-111RLF_C427307.html,
 "JAB1,JCD1",77313-824-64LF,2,,
