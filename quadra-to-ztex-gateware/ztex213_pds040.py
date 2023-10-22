@@ -52,6 +52,13 @@ _io = [
         Subsignal("reset_n", Pins("J5"), IOStandard("SSTL135")),
         Misc("SLEW=FAST"),
     ),
+    ("config_spiflash", 0,
+        Subsignal("cs_n", Pins("L13")),
+        # Subsignal("clk",  Pins("E9")), # 'E9' isn't a user pin, access clock via STARTUPE2 primitive, disabling the pads should do it in LiteSPIClkGen ?
+        Subsignal("mosi", Pins("K17")),
+        Subsignal("miso", Pins("K18")),
+        IOStandard("LVCMOS33"),
+    ),
 ]
 
 # QuadraFPGA I/O
@@ -72,14 +79,14 @@ _pds040_io_v1_0 = [
         #Subsignal("scl",     Pins(""), IOStandard("LVCMOS33")),
         #Subsignal("cec",     Pins(""), IOStandard("LVCMOS33")),
     ),
-    ("user_led", 1, Pins("N5"),  IOStandard("lvcmos33")), # pretend LED0, pmod #11
-    ("user_led", 0, Pins("P5"),  IOStandard("lvcmos33")), # pretend LED1, pmod #12
-    ("user_led", 3, Pins("P3"),  IOStandard("lvcmos33")), # pretend LED0, pmod #9
-    ("user_led", 2, Pins("P4"),  IOStandard("lvcmos33")), # pretend LED1, pmod #10
-    ("user_led", 5, Pins("R1"),  IOStandard("lvcmos33")), # pretend LED0, pmod #7
-    ("user_led", 4, Pins("T1"),  IOStandard("lvcmos33")), # pretend LED1, pmod #8
-    ("user_led", 7, Pins("R2"),  IOStandard("lvcmos33")), # pretend LED0, pmod #5
-    ("user_led", 6, Pins("P2"),  IOStandard("lvcmos33")), # pretend LED1, pmod #6
+    ("user_led", 0, Pins("N5"),  IOStandard("lvcmos33")), # pretend LED0, pmod #11
+    ("user_led", 1, Pins("P5"),  IOStandard("lvcmos33")), # pretend LED1, pmod #12
+    ("user_led", 2, Pins("P3"),  IOStandard("lvcmos33")), # pretend LED0, pmod #9
+    ("user_led", 3, Pins("P4"),  IOStandard("lvcmos33")), # pretend LED1, pmod #10
+    ("user_led", 4, Pins("R1"),  IOStandard("lvcmos33")), # pretend LED0, pmod #7
+    ("user_led", 5, Pins("T1"),  IOStandard("lvcmos33")), # pretend LED1, pmod #8
+    ("user_led", 6, Pins("R2"),  IOStandard("lvcmos33")), # pretend LED0, pmod #5
+    ("user_led", 7, Pins("P2"),  IOStandard("lvcmos33")), # pretend LED1, pmod #6
     ]
 
 # PDS

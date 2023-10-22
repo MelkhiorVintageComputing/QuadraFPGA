@@ -140,7 +140,7 @@ class _CRG(Module):
             
         
 class QuadraFPGA(SoCCore):
-    def __init__(self, variant, version, sys_clk_freq, goblin, goblin_res, **kwargs):
+    def __init__(self, variant, version, sys_clk_freq, config_flash, goblin, goblin_res, **kwargs):
         print(f"Building QuadraFPGA for board version {version}")
         
         kwargs["cpu_type"] = "None"
@@ -210,6 +210,7 @@ class QuadraFPGA(SoCCore):
             "pingmaster":        0xF0B00000,
             "ethmac":            0xF0C00000,
             "rom":               0xF0FF8000, # ROM at the end (32 KiB of it ATM)
+            "config_spiflash":   0xF0FF8000, # FIXME currently the flash is in the ROM spot, limited to 32 KiB
             #"END OF SLOT SPACE": 0xF0FFFFFF,
         }
         self.mem_map.update(wb_mem_map)
@@ -235,7 +236,21 @@ class QuadraFPGA(SoCCore):
         #for i in range(len(rom)):
         #    print(hex(rom[i]))
         #print("\n****************************************\n")
-        self.add_ram("rom", origin=self.mem_map["rom"], size=2**15, contents=rom_data, mode="r") ## 32 KiB, must match mmap
+        if (not config_flash):
+            self.add_ram("rom", origin=self.mem_map["rom"], size=2**15, contents=rom_data, mode="r") ## 32 KiB, must match mmap
+
+        if (config_flash):
+            sector = 40
+            from litespi.modules.generated_modules import S25FL128S
+            from litespi.opcodes import SpiNorFlashOpCodes as Codes
+            self.add_spi_flash(name="config_spiflash",
+                               mode="1x",
+                               clk_freq = sys_clk_freq/4, # Fixme; PHY freq ?
+                               module=S25FL128S(Codes.READ_1_1_1),
+                               region_size = 0x00008000, # 32 KiB,
+                               region_offset = (sector * 65536),
+                               with_mmap=True, with_master=False)
+            print(f"$$$$$ ROM must be put in the config Flash at sector {sector} $$$$$\n");
 
         #from wb_test import WA2D
         #self.submodules.wa2d = WA2D(self.platform)
@@ -256,9 +271,9 @@ class QuadraFPGA(SoCCore):
                            l2_cache_size = 0,
             )
             avail_sdram = self.bus.regions["main_ram"].size
-            from sdram_init import DDR3FBInit
-            self.submodules.sdram_init = DDR3FBInit(sys_clk_freq=sys_clk_freq, bitslip=1, delay=25)
-            self.bus.add_master(name="DDR3Init", master=self.sdram_init.bus)
+            #from sdram_init import DDR3FBInit
+            #self.submodules.sdram_init = DDR3FBInit(sys_clk_freq=sys_clk_freq, bitslip=1, delay=25)
+            #self.bus.add_master(name="DDR3Init", master=self.sdram_init.bus)
         else:
             avail_sdram = 256 * 1024 * 1024
             #self.add_ram("ram", origin=0x8f800000, size=2**16, mode="rw")
@@ -294,7 +309,7 @@ class QuadraFPGA(SoCCore):
         ###good_to_go = Signal()
         ###self.comb += [ good_to_go.eq((hold_reset_ctr == 0) & self.crg.locked & self.sdram_init.done) ]
         hold_reset = Signal()
-        self.comb += [ hold_reset.eq(~(hold_reset_ctr == 0) | ~self.crg.locked | ~self.sdram_init.done) ]
+        self.comb += [ hold_reset.eq(~(hold_reset_ctr == 0) | ~self.crg.locked) ] # | ~self.sdram_init.done) ]
         ## halt_n = platform.request("halt_3v3_n")
         ## self.comb += [ halt_n.eq(~hold_reset) ] # release the 68030 only when everything's fine
         #self.comb += [ halt_n.eq(1) ] # release the 68030 only when everything's fine
@@ -323,7 +338,7 @@ class QuadraFPGA(SoCCore):
         #self.submodules.wishbone_writemaster_pds040 = WishboneDomainCrossingMaster(platform=self.platform, slave=wishbone_writemaster_sys, cd_master="cpu", cd_slave="sys")
         self.bus.add_master(name="PDS040BridgeToWishbone_Write", master=wishbone_writemaster_sys)
 
-        if (False):
+        if (True):
             wb_forziscreen = wishbone.Interface(data_width=self.bus.data_width)
             from VintageBusFPGA_Common.Ziscreen import Ziscreen
             self.submodules.ziscreen_fifo = ClockDomainsRenamer({"read": "sys", "write": "cpu"})(AsyncFIFOBuffered(width=32, depth=1024))
@@ -388,6 +403,7 @@ def main():
     parser.add_argument("--variant", default="ztex2.13a", help="ZTex board variant (default ztex2.13a)")
     parser.add_argument("--version", default="V1.0", help="QuadraFPGA board version (default V1.0)")
     parser.add_argument("--sys-clk-freq", default=100e6, help="QuadraFPGA system clock (default 100e6 = 100 MHz)")
+    parser.add_argument("--config-flash", action="store_true", help="Configure the ROM to the internal Flash used for FPGA config")
     parser.add_argument("--goblin", action="store_true", help="add a goblin framebuffer")
     parser.add_argument("--goblin-res", default="640x480@60Hz", help="Specify the goblin resolution")
     builder_args(parser)
@@ -395,11 +411,12 @@ def main():
     args = parser.parse_args()
     
     soc = QuadraFPGA(**soc_core_argdict(args),
-                   variant=args.variant,
-                   version=args.version,
-                   sys_clk_freq=int(float(args.sys_clk_freq)),
-                   goblin=args.goblin,
-                   goblin_res=args.goblin_res)
+                     variant=args.variant,
+                     version=args.version,
+                     sys_clk_freq=int(float(args.sys_clk_freq)),
+                     config_flash=args.config_flash,
+                     goblin=args.goblin,
+                     goblin_res=args.goblin_res)
 
     version_for_filename = args.version.replace(".", "_")
 
