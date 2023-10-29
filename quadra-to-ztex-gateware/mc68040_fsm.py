@@ -7,7 +7,7 @@ import litex
 from litex.soc.interconnect import wishbone
 
 class MC68040_FSM(Module):
-    def __init__(self, soc, wb_read, wb_write, dram_native_r, cd_cpu="cpu", trace_inst_fifo = None):
+    def __init__(self, soc, wb_read, wb_write, dram_native, cd_cpu="cpu", trace_inst_fifo = None):
 
         platform = soc.platform
 
@@ -159,33 +159,47 @@ class MC68040_FSM(Module):
         write_fifo_front = self.write_fifo
         write_fifo_back = self.write_fifo
         #self.submodules.write_fifo_front = write_fifo_front = ClockDomainsRenamer(cd_cpu)(SyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=8))
-        #self.submodules.write_fifo_back  = write_fifo_back =  ClockDomainsRenamer({"read": "sys", "write": cd_cpu})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=16))
+        #self.submodules.write_fifo_back  = write_fifo_back =  ClockDomainsRenamer({"read": "sys", "write": cd_cpu})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=32))
         
         write_fifo_back_dout = Record(write_fifo_layout)
         self.comb += write_fifo_back_dout.raw_bits().eq(write_fifo_back.dout)
         write_fifo_front_din = Record(write_fifo_layout)
         self.comb += write_fifo_front.din.eq(write_fifo_front_din.raw_bits())
 
-        #if (False):
-        #    self.comb += [
-        #        write_fifo_back.we.eq(write_fifo_front.readable),
-        #        write_fifo_front.re.eq(write_fifo_back.writable),
-        #        write_fifo_back.din.eq(write_fifo_front.dout),
-        #    ]
-        #else:
-        #    forward_data = Signal()
-        #    sync_cpu += [
-        #        If(forward_data,
-        #           forward_data.eq(0),
-        #        ).Else(
-        #            forward_data.eq(write_fifo_front.readable & write_fifo_back.writable),
-        #        ),
-        #    ]
-        #    self.comb += [
-        #        write_fifo_back.we.eq(forward_data),
-        #        write_fifo_front.re.eq(forward_data),
-        #        write_fifo_back.din.eq(write_fifo_front.dout),
-        #    ]
+
+        # if (True):
+        #self.comb += [
+        #    write_fifo_back.we.eq(write_fifo_front.readable),
+        #    write_fifo_front.re.eq(write_fifo_back.writable),
+        #    write_fifo_back.din.eq(write_fifo_front.dout),
+        #]
+        # else:
+        #buffered = Signal()
+        #front_re = Signal()
+        #back_we = Signal()
+        #fifo_buffer = Signal(layout_len(write_fifo_layout))
+        #sync_cpu += [
+        #    If(write_fifo_front.readable & ~buffered,
+        #       fifo_buffer.eq(write_fifo_front.dout),
+        #       buffered.eq(1),
+        #       front_re.eq(1),
+        #    ),
+        #    If(front_re,
+        #       front_re.eq(0),
+        #    ),
+        #    If(buffered & write_fifo_back.writable,
+        #       back_we.eq(1),
+        #       buffered.eq(0),
+        #    ),
+        #    If(back_we,
+        #       back_we.eq(0),
+        #    ),
+        #]
+        #self.comb += [
+        #    write_fifo_back.we.eq(back_we),
+        #    write_fifo_front.re.eq(front_re),
+        #    write_fifo_back.din.eq(fifo_buffer),
+        #]
 
         # back-pressure from sys to cpu clock domain for RAW hazards
         self.submodules.write_fifo_back_readable_sync = BusSynchronizer(width = 1, idomain = "sys", odomain = cd_cpu)
@@ -195,15 +209,15 @@ class MC68040_FSM(Module):
 
         self.submodules.slave_fsm = slave_fsm = ClockDomainsRenamer(cd_cpu)(FSM(reset_state="Reset"))
 
-        ### dram_native_r
+        ### dram_native
         self.comb += [
-            dram_native_r.cmd.we.eq(0), # never write
-            dram_native_r.cmd.addr.eq(processed_ad[4:]), # assume 128 bits (16 bytes)
+            dram_native.cmd.addr.eq(processed_ad[4:]), # assume 128 bits (16 bytes)
         ]
-        ## dram_native_r.cmd.valid ->
-        ## dram_native_r.cmd.ready <-
-        ## dram_native_r.rdata.valid <-
-        ## self.dram_native_r.rdata.data <-
+        ## dram_native.cmd.valid ->
+        ## dram_native.cmd.we ->
+        ## dram_native.cmd.ready <-
+        ## dram_native.rdata.valid <-
+        ## dram_native.rdata.data <-
         burst_counter = Signal(2)
         burst_buffer = Signal(128)
 
@@ -230,8 +244,8 @@ class MC68040_FSM(Module):
                          TBI_oe.eq(1),
                          TBI_o_n.eq(1),
                          If(~write_fifo_back_readable_in_cpu, # previous write(s) done
-                            dram_native_r.cmd.valid.eq(1),
-                            If(dram_native_r.cmd.ready, # interface available
+                            dram_native.cmd.valid.eq(1),
+                            If(dram_native.cmd.ready, # interface available
                                NextState("MemBurstReadWait"),
                             ),
                          ),
@@ -250,6 +264,21 @@ class MC68040_FSM(Module):
                                 TA_o_n.eq(0), 
                                 NextState("MemBurstWrite"),
                              ),
+                      ).Elif(0 & my_slot_space & ~A_i[23] & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1], # Burst write to FB memory, DEBUG FIXME DISABLED
+                             # FIXME FIXME FIXME
+                             TA_oe.eq(1),
+                             TA_o_n.eq(1),
+                             TEA_oe.eq(1),
+                             TEA_o_n.eq(1),
+                             TBI_oe.eq(1),
+                             TBI_o_n.eq(1),
+                             NextValue(burst_counter, 0), # '040 burst are aligned
+                             #NextValue(A_latch, processed_ad),
+                             If(dram_native.cmd.ready,
+                                NextState("FBMemBurstWrite"),
+                             ).Else(
+                                NextState("DelayFBMemBurstWrite"),
+                             )
                       ).Elif(((my_slot_space | my_superslot_space) & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1]), # non-memory burst Write
                              TA_oe.eq(1),
                              TA_o_n.eq(1),
@@ -370,10 +399,10 @@ class MC68040_FSM(Module):
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
                       D_oe.eq(1),
-                      dram_native_r.rdata.ready.eq(1),
-                      D_rev_o.eq(dram_native_r.rdata.data[  0: 32]),
-                      NextValue(burst_buffer, dram_native_r.rdata.data),
-                      If(dram_native_r.rdata.valid,
+                      dram_native.rdata.ready.eq(1),
+                      D_rev_o.eq(dram_native.rdata.data[  0: 32]),
+                      NextValue(burst_buffer, dram_native.rdata.data),
+                      If(dram_native.rdata.valid,
                          TA_o_n.eq(0),
                          NextValue(burst_counter, 1), 
                          NextState("MemBurstRead"),
@@ -387,14 +416,14 @@ class MC68040_FSM(Module):
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
                       D_oe.eq(1),
-                      Case(burst_buffer, {
-                          #0x0: D_rev_o.eq(dram_native_r.rdata.data[  0: 32]),
-                          0x1: D_rev_o.eq(dram_native_r.rdata.data[ 32: 64]),
-                          0x2: D_rev_o.eq(dram_native_r.rdata.data[ 64: 96]),
-                          0x3: D_rev_o.eq(dram_native_r.rdata.data[ 96:128]),
+                      Case(burst_counter, {
+                          #0x0: D_rev_o.eq(dram_native.rdata.data[  0: 32]),
+                          0x1: D_rev_o.eq(dram_native.rdata.data[ 32: 64]),
+                          0x2: D_rev_o.eq(dram_native.rdata.data[ 64: 96]),
+                          0x3: D_rev_o.eq(dram_native.rdata.data[ 96:128]),
                       }),
-                      NextValue(burst_buffer, burst_buffer + 1),
-                      If(burst_buffer == 0x3,
+                      NextValue(burst_counter, burst_counter + 1),
+                      If(burst_counter == 0x3,
                          NextValue(finishing, 1),
                          NextState("Idle"),
                       ),
@@ -423,12 +452,11 @@ class MC68040_FSM(Module):
                       TEA_o_n.eq(1),
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
-                      If(~write_fifo_back_readable_in_cpu, # ~write_fifo_front.readable, # FIXME # the front FIFO is empty, we have enough space ; should use level instead ?
+                      If(~write_fifo_back_readable_in_cpu, #~write_fifo_front.readable, # FIXME # the front FIFO is empty, we have enough space ; should use level instead ?
                          #TA_o_n.eq(0), # accept first data
                          NextState("BurstWrite"),
                       ),
         )
-        seen_burst = Signal() # DEBUG
         slave_fsm.act("BurstWrite",
                       TA_oe.eq(1),
                       TA_o_n.eq(0), # always TA here
@@ -439,9 +467,45 @@ class MC68040_FSM(Module):
                       NextValue(burst_counter, burst_counter + 1),
                       write_fifo_front.we.eq(1), # we have space
                       If(burst_counter == 0x3,
-                         NextValue(seen_burst, 1),
                          NextValue(finishing, 1),
                          NextState("Idle"),
+                      )
+        )
+        slave_fsm.act("DelayFBMemBurstWrite",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(1),
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      If(dram_native.cmd.ready,
+                         NextState("FBMemBurstWrite"),
+                      ),
+        )
+        seen_fbburst = Signal() # DEBUG
+        slave_fsm.act("FBMemBurstWrite",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(0), # always TA here
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      NextValue(burst_counter, burst_counter + 1),
+                      Case(burst_counter, {
+                          0x0: [ NextValue(burst_buffer[ 0: 32], D_rev_i), ],
+                          0x1: [ NextValue(burst_buffer[32: 64], D_rev_i), ],
+                          0x2: [ NextValue(burst_buffer[64: 96], D_rev_i), ],
+                          0x3: [ ], # NextValue(burst_buffer[96:128], D_rev_i), ],
+                      }),
+                      If(burst_counter == 0x3,
+                         NextValue(finishing, 1),
+                         dram_native.cmd.valid.eq(1),
+                         dram_native.cmd.we.eq(1),
+                         dram_native.wdata.data.eq(Cat(burst_buffer[ 0: 96], D_rev_i)),
+                         dram_native.wdata.we.eq(2**len(dram_native.wdata.we)-1),
+                         dram_native.wdata.valid.eq(1),
+                         NextState("Idle"),
+                         NextValue(seen_fbburst, 1),
                       )
         )
         
@@ -505,17 +569,17 @@ class MC68040_FSM(Module):
         self.comb += [
             led0.eq(~slave_fsm.ongoing("Idle")),
             led1.eq(0),
-            led2.eq(0),
-            led3.eq(seen_burst), # led3.eq(slave_fsm.ongoing("MemBurstReadWait") | slave_fsm.ongoing("MemBurstRead") | slave_fsm.ongoing("MemBurstWrite")),
+            led2.eq(seen_fbburst),
+            led3.eq(wb_write.ack), # led3.eq(slave_fsm.ongoing("MemBurstReadWait") | slave_fsm.ongoing("MemBurstRead") | slave_fsm.ongoing("MemBurstWrite")),
             #led4.eq(0),
             #led5.eq(0),
             #led6.eq(write_fifo_front.writable),
             #led7.eq(write_fifo_back_readable_in_cpu),
             #led6.eq(0),
             #led7.eq(slave_fsm.ongoing("BurstWrite")),
-            led4.eq(0),
+            led4.eq(~write_fifo_front.writable),
             led5.eq(write_fifo_front.readable),
-            led6.eq(0),
+            led6.eq(~write_fifo_back.writable),
             led7.eq(write_fifo_back.readable),
         ]
         

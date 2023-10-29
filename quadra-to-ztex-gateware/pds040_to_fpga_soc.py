@@ -338,7 +338,7 @@ class QuadraFPGA(SoCCore):
         #self.submodules.wishbone_writemaster_pds040 = WishboneDomainCrossingMaster(platform=self.platform, slave=wishbone_writemaster_sys, cd_master="cpu", cd_slave="sys")
         self.bus.add_master(name="PDS040BridgeToWishbone_Write", master=wishbone_writemaster_sys)
 
-        if (True):
+        if (False):
             wb_forziscreen = wishbone.Interface(data_width=self.bus.data_width)
             from VintageBusFPGA_Common.Ziscreen import Ziscreen
             self.submodules.ziscreen_fifo = ClockDomainsRenamer({"read": "sys", "write": "cpu"})(AsyncFIFOBuffered(width=32, depth=1024))
@@ -353,7 +353,7 @@ class QuadraFPGA(SoCCore):
                                                                         wb_read=self.wishbone_master_pds040,
                                                                         #wb_write=self.wishbone_writemaster_pds040,
                                                                         wb_write=wishbone_writemaster_sys,
-                                                                        dram_native_r=self.sdram.crossbar.get_port(mode="read", data_width=128, clock_domain="cpu"),
+                                                                        dram_native=self.sdram.crossbar.get_port(mode="rw", data_width=128, clock_domain="cpu"),
                                                                         cd_cpu="cpu",
                                                                         trace_inst_fifo=self.ziscreen_fifo)
         if (goblin):
