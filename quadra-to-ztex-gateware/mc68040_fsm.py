@@ -28,7 +28,7 @@ class MC68040_FSM(Module):
         TM = platform.request("tm_3v3") # 3 Transfer Modifier , I
 
         A_i = Signal(32)
-        A_latch = Signal(32)
+        #A_latch = Signal(32)
         self.comb += [ A_i.eq(A) ]
         
         D_i = Signal(32)
@@ -155,17 +155,43 @@ class MC68040_FSM(Module):
             ("data", 32),
             ("sel", 4),
         ]
-        self.submodules.write_fifo = write_fifo = ClockDomainsRenamer({"read": "sys", "write": "cpu"})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=16))
-        write_fifo_dout = Record(write_fifo_layout)
-        self.comb += write_fifo_dout.raw_bits().eq(write_fifo.dout)
-        write_fifo_din = Record(write_fifo_layout)
-        self.comb += write_fifo.din.eq(write_fifo_din.raw_bits())
+        self.submodules.write_fifo = ClockDomainsRenamer({"read": "sys", "write": cd_cpu})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=16))
+        write_fifo_front = self.write_fifo
+        write_fifo_back = self.write_fifo
+        #self.submodules.write_fifo_front = write_fifo_front = ClockDomainsRenamer(cd_cpu)(SyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=8))
+        #self.submodules.write_fifo_back  = write_fifo_back =  ClockDomainsRenamer({"read": "sys", "write": cd_cpu})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=16))
+        
+        write_fifo_back_dout = Record(write_fifo_layout)
+        self.comb += write_fifo_back_dout.raw_bits().eq(write_fifo_back.dout)
+        write_fifo_front_din = Record(write_fifo_layout)
+        self.comb += write_fifo_front.din.eq(write_fifo_front_din.raw_bits())
 
-        # back-pressure from sys to cpu clock domain
-        self.submodules.write_fifo_readable_sync = BusSynchronizer(width = 1, idomain = "sys", odomain = "cpu")
-        write_fifo_readable_in_cpu = Signal()
-        self.comb += self.write_fifo_readable_sync.i.eq(self.write_fifo.readable)
-        self.comb += write_fifo_readable_in_cpu.eq(self.write_fifo_readable_sync.o)
+        #if (False):
+        #    self.comb += [
+        #        write_fifo_back.we.eq(write_fifo_front.readable),
+        #        write_fifo_front.re.eq(write_fifo_back.writable),
+        #        write_fifo_back.din.eq(write_fifo_front.dout),
+        #    ]
+        #else:
+        #    forward_data = Signal()
+        #    sync_cpu += [
+        #        If(forward_data,
+        #           forward_data.eq(0),
+        #        ).Else(
+        #            forward_data.eq(write_fifo_front.readable & write_fifo_back.writable),
+        #        ),
+        #    ]
+        #    self.comb += [
+        #        write_fifo_back.we.eq(forward_data),
+        #        write_fifo_front.re.eq(forward_data),
+        #        write_fifo_back.din.eq(write_fifo_front.dout),
+        #    ]
+
+        # back-pressure from sys to cpu clock domain for RAW hazards
+        self.submodules.write_fifo_back_readable_sync = BusSynchronizer(width = 1, idomain = "sys", odomain = cd_cpu)
+        write_fifo_back_readable_in_cpu = Signal()
+        self.comb += self.write_fifo_back_readable_sync.i.eq(write_fifo_back.readable)
+        self.comb += write_fifo_back_readable_in_cpu.eq(self.write_fifo_back_readable_sync.o)
 
         self.submodules.slave_fsm = slave_fsm = ClockDomainsRenamer(cd_cpu)(FSM(reset_state="Reset"))
 
@@ -196,17 +222,17 @@ class MC68040_FSM(Module):
                       TBI_oe.eq(finishing),
                       TBI_o_n.eq(1),
                       If(my_mem_space & ~TS_i_n & RW_i_n & SIZ_i[0] & SIZ_i[1] & 0, # Burst read to memory, DEBUG FIXME DISABLED
+                         # FIXME FIXME FIXME
                          TA_oe.eq(1),
                          TA_o_n.eq(1),
                          TEA_oe.eq(1),
                          TEA_o_n.eq(1),
                          TBI_oe.eq(1),
                          TBI_o_n.eq(1),
-                         NextValue(burst_counter, 0), # '040 burst are aligned
-                         If(~write_fifo_readable_in_cpu, # previous write(s) done
+                         If(~write_fifo_back_readable_in_cpu, # previous write(s) done
                             dram_native_r.cmd.valid.eq(1),
                             If(dram_native_r.cmd.ready, # interface available
-                               NextState("BurstReadWait"),
+                               NextState("MemBurstReadWait"),
                             ),
                          ),
                       ).Elif(my_mem_space & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1] & 0, # Burst write to memory, DEBUG FIXME DISABLED
@@ -217,15 +243,27 @@ class MC68040_FSM(Module):
                              TEA_o_n.eq(1),
                              TBI_oe.eq(1),
                              TBI_o_n.eq(1),
-                             NextValue(A_latch, processed_ad),
-                             write_fifo_din.adr.eq(processed_ad),
-                             write_fifo_din.sel.eq(0xF),
-                             If(write_fifo.writable,
+                             #NextValue(A_latch, processed_ad),
+                             If(write_fifo_front.writable,
                                 NextValue(burst_counter, 1), # '040 burst are aligned
-                                write_fifo.we.eq(1), # write if there's space
+                                write_fifo_front.we.eq(1), # write if there's space
                                 TA_o_n.eq(0), 
-                                NextState("BurstWrite"),
+                                NextState("MemBurstWrite"),
                              ),
+                      ).Elif(((my_slot_space | my_superslot_space) & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1]), # non-memory burst Write
+                             TA_oe.eq(1),
+                             TA_o_n.eq(1),
+                             TEA_oe.eq(1),
+                             TEA_o_n.eq(1),
+                             TBI_oe.eq(1),
+                             TBI_o_n.eq(1),
+                             #NextValue(A_latch, processed_ad),
+                             NextValue(burst_counter, 0), # '040 burst are aligned
+                             If(~write_fifo_back_readable_in_cpu, # ~write_fifo_front.readable, # FIXME # the front FIFO is empty, we have enough space ; should use level instead ?
+                                NextState("BurstWrite"),
+                             ).Else(
+                                 NextState("DelayBurstWrite"),
+                             )
                       ).Elif((my_device_space & ~TS_i_n & RW_i_n), # non-burst or non-memory Read  & (~SIZ_i[0] | ~SIZ_i[1])
                              ###
                              #trace_inst_fifo.we.eq(1),
@@ -237,8 +275,9 @@ class MC68040_FSM(Module):
                              TEA_o_n.eq(1),
                              TBI_oe.eq(1),
                              TBI_o_n.eq(1),
-                             NextValue(A_latch, processed_ad),
-                             If(~write_fifo_readable_in_cpu, # previous write(s) done
+                             NextValue(burst_counter, 0),
+                             #NextValue(A_latch, processed_ad),
+                             If(~write_fifo_back_readable_in_cpu, # previous write(s) done
                                 wb_read.cyc.eq(1),
                                 wb_read.stb.eq(1),
                                 wb_read.we.eq(0),
@@ -259,86 +298,8 @@ class MC68040_FSM(Module):
                              TEA_o_n.eq(1),
                              TBI_oe.eq(1),
                              TBI_o_n.eq(1),
-                             NextValue(A_latch, processed_ad),
-                             write_fifo_din.adr.eq(processed_ad),
-                             Case(SIZ_i, {
-                                 0x0: [ # long word
-                                     #Case(processed_ad[0:2], {
-                                     #    0x0: [
-                                     write_fifo_din.sel.eq(0xF),
-                                     #    ],
-                                         #0x1: [
-                                         #     write_fifo_din.sel.eq(0xE), # not on '040
-                                         #],
-                                         #0x2: [
-                                         #     write_fifo_din.sel.eq(0xC), # not on '040
-                                         #],
-                                         #0x3: [
-                                         #     write_fifo_din.sel.eq(0x8), # not on '040
-                                         #],
-                                     #}),
-                                 ],
-                                 0x1: [ # byte
-                                     Case(processed_ad[0:2], {
-                                         0x0: [
-                                              write_fifo_din.sel.eq(0x1),
-                                         ],
-                                         0x1: [
-                                              write_fifo_din.sel.eq(0x2),
-                                         ],
-                                         0x2: [
-                                              write_fifo_din.sel.eq(0x4),
-                                         ],
-                                         0x3: [
-                                              write_fifo_din.sel.eq(0x8),
-                                         ],
-                                     }),
-                                 ],
-                                 0x2: [ # word
-                                     Case(processed_ad[0:2], {
-                                         0x0: [
-                                              write_fifo_din.sel.eq(0x3),
-                                         ],
-                                         #0x1: [
-                                         #     write_fifo_din.sel.eq(0x6), # not on '040
-                                         #],
-                                         0x2: [
-                                              write_fifo_din.sel.eq(0xC),
-                                         ],
-                                         #0x3: [
-                                         #     write_fifo_din.sel.eq(0x8), # not on '040
-                                         #],
-                                     }),
-                                 ],
-                                 0x3: [ # line
-                                     #Case(processed_ad[0:2], {
-                                     #    0x0: [
-                                     write_fifo_din.sel.eq(0xF),
-                                     #    ],
-                                         #0x1: [
-                                         #     write_fifo_din.sel.eq(0xE),
-                                         #],
-                                         #0x2: [
-                                         #     write_fifo_din.sel.eq(0xC),
-                                         #],
-                                         #0x3: [
-                                         #     write_fifo_din.sel.eq(0x8),
-                                         #],
-                                     #}),
-                                 ],
-                             }),
-                             #If(write_fifo.writable,
-                             #   write_fifo.we.eq(1), # write if there's space
-                             #   If(SIZ_i == 0x3,
-                             #      TBI_o_n.eq(0), # don't burst write for now
-                             #   ),
-                             #   TA_o_n.eq(0), 
-                             #   NextValue(handled_write, 1), # DEBUG
-                             #   NextValue(hsiz, SIZ_i),
-                             #   NextState("Idle"), # "Finish"
-                             #).Else(
-                                 NextState("DelayWrite"),
-                             #),
+                             NextValue(burst_counter, 0),
+                             NextState("DelayWrite"),
                       )
         )
         slave_fsm.act("DelayRead",
@@ -348,12 +309,12 @@ class MC68040_FSM(Module):
                       TEA_o_n.eq(1),
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
-                      If(~write_fifo_readable_in_cpu, # previous write(s) done
+                      If(~write_fifo_back_readable_in_cpu, # previous write(s) done
                          wb_read.cyc.eq(1),
                          wb_read.stb.eq(1),
                          wb_read.we.eq(0),
                          wb_read.sel.eq(0xf), # always read 32-bits for cache
-                         wb_read.adr.eq(A_latch[2:32]),
+                         wb_read.adr.eq(processed_ad[2:32]),
                          NextState("Read"),
                       )
         )
@@ -362,7 +323,7 @@ class MC68040_FSM(Module):
                       wb_read.stb.eq(1),
                       wb_read.we.eq(0),
                       wb_read.sel.eq(0xf),
-                      wb_read.adr.eq(A_latch[2:32]),
+                      wb_read.adr.eq(processed_ad[2:32]),
                       TA_oe.eq(1),
                       TA_o_n.eq(1),
                       TEA_oe.eq(1),
@@ -381,7 +342,7 @@ class MC68040_FSM(Module):
                              TBI_o_n.eq(0), # do not burst here
                          ),
                          NextValue(finishing, 1),
-                         NextState("Idle"), # "Finish"
+                         NextState("Idle"),
                       )
         )
         slave_fsm.act("DelayWrite",
@@ -391,93 +352,17 @@ class MC68040_FSM(Module):
                       TEA_o_n.eq(1),
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
-                      write_fifo_din.adr.eq(A_latch),
-                      Case(SIZ_i, {
-                          0x0: [ # long word
-                              #Case(A_latch[0:2], {
-                              #    0x0: [
-                              write_fifo_din.sel.eq(0xF),
-                              #    ],
-                              #0x1: [
-                              #     write_fifo_din.sel.eq(0xE), # not on '040
-                              #],
-                              #0x2: [
-                              #     write_fifo_din.sel.eq(0xC), # not on '040
-                              #],
-                              #0x3: [
-                              #     write_fifo_din.sel.eq(0x8), # not on '040
-                              #],
-                              #}),
-                          ],
-                          0x1: [ # byte
-                              Case(A_latch[0:2], {
-                                  0x0: [
-                                      write_fifo_din.sel.eq(0x1),
-                                  ],
-                                  0x1: [
-                                      write_fifo_din.sel.eq(0x2),
-                                  ],
-                                  0x2: [
-                                      write_fifo_din.sel.eq(0x4),
-                                  ],
-                                  0x3: [
-                                      write_fifo_din.sel.eq(0x8),
-                                  ],
-                              }),
-                          ],
-                          0x2: [ # word
-                              Case(A_latch[0:2], {
-                                  0x0: [
-                                      write_fifo_din.sel.eq(0x3),
-                                  ],
-                                  #0x1: [
-                                  #     write_fifo_din.sel.eq(0x6), # not on '040
-                                  #],
-                                  0x2: [
-                                      write_fifo_din.sel.eq(0xC),
-                                  ],
-                                  #0x3: [
-                                  #     write_fifo_din.sel.eq(0x8), # not on '040
-                                  #],
-                              }),
-                          ],
-                          0x3: [ # line
-                              #Case(A_latch[0:2], {
-                              #    0x0: [
-                              write_fifo_din.sel.eq(0xF),
-                              #    ],
-                              #0x1: [
-                              #     write_fifo_din.sel.eq(0xE),
-                              #],
-                              #0x2: [
-                              #     write_fifo_din.sel.eq(0xC),
-                              #],
-                              #0x3: [
-                              #     write_fifo_din.sel.eq(0x8),
-                              #],
-                              #}),
-                          ],
-                      }),
-                      If(write_fifo.writable,
-                         write_fifo.we.eq(1), # write if there's space
+                      If(write_fifo_front.writable,
+                         write_fifo_front.we.eq(1), # write
                          If(SIZ_i == 0x3,
                             TBI_o_n.eq(0), # don't burst write for now
                          ),
                          TA_o_n.eq(0),
                          NextValue(finishing, 1),
-                         NextState("Idle"), # "Finish"
+                         NextState("Idle"),
                       ),
         )
-        slave_fsm.act("Finish", # do we need / are we allowed a cycle of driving back to default ?
-                      TA_oe.eq(1),
-                      TA_o_n.eq(1),
-                      TEA_oe.eq(1),
-                      TEA_o_n.eq(1),
-                      TBI_oe.eq(1),
-                      TBI_o_n.eq(1),
-                      NextState("Idle"),
-        )
-        slave_fsm.act("BurstReadWait",
+        slave_fsm.act("MemBurstReadWait",
                       TA_oe.eq(1),
                       TA_o_n.eq(1),
                       TEA_oe.eq(1),
@@ -491,10 +376,10 @@ class MC68040_FSM(Module):
                       If(dram_native_r.rdata.valid,
                          TA_o_n.eq(0),
                          NextValue(burst_counter, 1), 
-                         NextState("BurstRead"),
+                         NextState("MemBurstRead"),
                       ),
         )
-        slave_fsm.act("BurstRead",
+        slave_fsm.act("MemBurstRead",
                       TA_oe.eq(0),
                       TA_o_n.eq(1),
                       TEA_oe.eq(1),
@@ -510,39 +395,102 @@ class MC68040_FSM(Module):
                       }),
                       NextValue(burst_buffer, burst_buffer + 1),
                       If(burst_buffer == 0x3,
-                         NextState("Finish"),# "Finish"
+                         NextValue(finishing, 1),
+                         NextState("Idle"),
                       ),
         )
-        slave_fsm.act("BurstWrite",
+        slave_fsm.act("MemBurstWrite",
                       TA_oe.eq(1),
                       TA_o_n.eq(1),
                       TEA_oe.eq(1),
                       TEA_o_n.eq(1),
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
-                      write_fifo_din.adr.eq(processed_ad + burst_counter),
-                      write_fifo_din.sel.eq(0xF),
-                      If(write_fifo.writable,
+                      If(write_fifo_front.writable,
                          NextValue(burst_counter, burst_counter + 1),
-                         write_fifo.we.eq(1), # write if there's space
+                         write_fifo_front.we.eq(1), # write if there's space
                          TA_o_n.eq(0),
                          If(burst_counter == 0x3,
-                             NextState("Finish"), # "Finish"
+                            NextValue(finishing, 1),
+                            NextState("Idle"),
                          )
                       ),
         )
+        slave_fsm.act("DelayBurstWrite",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(1),
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      If(~write_fifo_back_readable_in_cpu, # ~write_fifo_front.readable, # FIXME # the front FIFO is empty, we have enough space ; should use level instead ?
+                         #TA_o_n.eq(0), # accept first data
+                         NextState("BurstWrite"),
+                      ),
+        )
+        seen_burst = Signal() # DEBUG
+        slave_fsm.act("BurstWrite",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(0), # always TA here
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      NextValue(burst_counter, burst_counter + 1),
+                      write_fifo_front.we.eq(1), # we have space
+                      If(burst_counter == 0x3,
+                         NextValue(seen_burst, 1),
+                         NextValue(finishing, 1),
+                         NextState("Idle"),
+                      )
+        )
         
         # connect the write FIFO inputs
-        self.comb += [ write_fifo_din.data.eq(D_rev_i),
+        self.comb += [ write_fifo_front_din.data.eq(D_rev_i),
+                       write_fifo_front_din.adr.eq(processed_ad + Cat(Signal(2,reset = 0), burst_counter)),
+                       Case(SIZ_i, {
+                           0x0: [ # long word
+                              write_fifo_front_din.sel.eq(0xF),
+                           ],
+                           0x1: [ # byte
+                               Case(processed_ad[0:2], {
+                                   0x0: [
+                                       write_fifo_front_din.sel.eq(0x1),
+                                   ],
+                                   0x1: [
+                                       write_fifo_front_din.sel.eq(0x2),
+                                   ],
+                                   0x2: [
+                                       write_fifo_front_din.sel.eq(0x4),
+                                   ],
+                                   0x3: [
+                                       write_fifo_front_din.sel.eq(0x8),
+                                   ],
+                               }),
+                           ],
+                           0x2: [ # word
+                               Case(processed_ad[1:2], {
+                                   0x0: [
+                                       write_fifo_front_din.sel.eq(0x3),
+                                   ],
+                                   0x1: [
+                                       write_fifo_front_din.sel.eq(0xC),
+                                   ],
+                               }),
+                           ],
+                           0x3: [ # line
+                               write_fifo_front_din.sel.eq(0xF),
+                           ],
+                       }),
         ]
         # deal with emptying the Write FIFO to the write WB
-        self.comb += [ wb_write.cyc.eq(write_fifo.readable),
-                       wb_write.stb.eq(write_fifo.readable),
+        self.comb += [ wb_write.cyc.eq(write_fifo_back.readable),
+                       wb_write.stb.eq(write_fifo_back.readable),
                        wb_write.we.eq(1),
-                       wb_write.adr.eq(write_fifo_dout.adr[2:32]),
-                       wb_write.dat_w.eq(write_fifo_dout.data),
-                       wb_write.sel.eq(write_fifo_dout.sel),
-                       write_fifo.re.eq(wb_write.ack),
+                       wb_write.adr.eq(write_fifo_back_dout.adr[2:32]),
+                       wb_write.dat_w.eq(write_fifo_back_dout.data),
+                       wb_write.sel.eq(write_fifo_back_dout.sel),
+                       write_fifo_back.re.eq(wb_write.ack),
         ]
 
         led0 = platform.request("user_led", 0)
@@ -556,15 +504,19 @@ class MC68040_FSM(Module):
         
         self.comb += [
             led0.eq(~slave_fsm.ongoing("Idle")),
-            led1.eq(slave_fsm.ongoing("Read")),
-            led2.eq(slave_fsm.ongoing("Finish")),
-            led3.eq(0), # led3.eq(slave_fsm.ongoing("BurstReadWait") | slave_fsm.ongoing("BurstRead") | slave_fsm.ongoing("BurstWrite")),
+            led1.eq(0),
+            led2.eq(0),
+            led3.eq(seen_burst), # led3.eq(slave_fsm.ongoing("MemBurstReadWait") | slave_fsm.ongoing("MemBurstRead") | slave_fsm.ongoing("MemBurstWrite")),
+            #led4.eq(0),
+            #led5.eq(0),
+            #led6.eq(write_fifo_front.writable),
+            #led7.eq(write_fifo_back_readable_in_cpu),
+            #led6.eq(0),
+            #led7.eq(slave_fsm.ongoing("BurstWrite")),
             led4.eq(0),
-            led5.eq(0),
-            #led6.eq(write_fifo.writable),
-            #led7.eq(write_fifo_readable_in_cpu),
+            led5.eq(write_fifo_front.readable),
             led6.eq(0),
-            led7.eq(0),
+            led7.eq(write_fifo_back.readable),
         ]
         
         if (False and (trace_inst_fifo != None)):
@@ -610,13 +562,13 @@ class MC68040_FSM(Module):
                           ).Else(
                               NextValue(timeout, timeout - 1),
                           ),
-                          If((timeout == 0) & (A_latch != last) & trace_inst_fifo.writable,
-                             NextValue(last, A_latch),
+                          If((timeout == 0) & (processed_ad != last) & trace_inst_fifo.writable,
+                             NextValue(last, processed_ad),
                              trace_inst_fifo.we.eq(1),
-                             trace_inst_fifo.din[ 0: 8].eq(A_latch[24:32]),
-                             trace_inst_fifo.din[ 8:16].eq(A_latch[16:24]),
-                             trace_inst_fifo.din[16:24].eq(A_latch[ 8:16]),
-                             trace_inst_fifo.din[24:32].eq(A_latch[ 0: 8]),
+                             trace_inst_fifo.din[ 0: 8].eq(processed_ad[24:32]),
+                             trace_inst_fifo.din[ 8:16].eq(processed_ad[16:24]),
+                             trace_inst_fifo.din[16:24].eq(processed_ad[ 8:16]),
+                             trace_inst_fifo.din[24:32].eq(processed_ad[ 0: 8]),
                           )
             )
             
