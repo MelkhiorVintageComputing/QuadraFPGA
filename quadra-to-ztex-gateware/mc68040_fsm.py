@@ -122,10 +122,12 @@ class MC68040_FSM(Module):
 
         # selection logic
         my_slot_space = Signal()
-        self.comb += [ my_slot_space.eq((A_i[24:32] == 0xfe)) ] # fixme: abstract slot $E
+        self.comb += [ my_slot_space.eq((A_i[24:32] == 0xFE)) ] # fixme: abstract slot $E
         
         my_mem_space = Signal()
-        #self.comb += [ my_mem_space.eq((A_i[28:32] == 0x2)) ] # 0x20 >> 4 == 0x2
+        # As soons as I enable this at $2000_0000 to $2FFF_FFFF, some "chimes of death" occur...
+        #self.comb += [ my_mem_space.eq((A_i[28:32] == 0x2)) ] # 0x20 >> 4 == 0x2 # only 256 MiB
+        #self.comb += [ my_mem_space.eq((A_i[28:32] == 0x1)) ] # 0x10 >> 4 == 0x1 # only 256 MiB
         self.comb += [ my_mem_space.eq(0), ]
         
         my_superslot_space = Signal()
@@ -161,7 +163,6 @@ class MC68040_FSM(Module):
         front_fifo_depth = 8
         front_fifo_level_check = (front_fifo_depth - 4) # will be compared to 'level', "Number of unread entries", we need at least 4 free slots for a burst
         self.submodules.write_fifo_front = write_fifo_front = ClockDomainsRenamer(cd_cpu)(SyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=front_fifo_depth))
-        #self.submodules.write_fifo_front = write_fifo_front = ClockDomainsRenamer({"read": cd_cpu, "write": cd_cpu})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=4))
         self.submodules.write_fifo_back  = write_fifo_back =  ClockDomainsRenamer({"read": "sys",  "write": cd_cpu})(AsyncFIFOBuffered(width=layout_len(write_fifo_layout), depth=32))
         
         write_fifo_back_dout = Record(write_fifo_layout)
@@ -169,39 +170,11 @@ class MC68040_FSM(Module):
         write_fifo_front_din = Record(write_fifo_layout)
         self.comb += write_fifo_front.din.eq(write_fifo_front_din.raw_bits())
 
-        # if (True):
         self.comb += [
             write_fifo_front.re.eq(write_fifo_back.writable),
             write_fifo_back.we.eq(write_fifo_front.readable),
             write_fifo_back.din.eq(write_fifo_front.dout ^ Cat(Signal(32, reset = 0), Signal(32, reset = 0xFFFFFFFF), Signal(4, reset = 0))),
         ]
-        # else:
-        #buffered = Signal()
-        #front_re = Signal()
-        #back_we = Signal()
-        #fifo_buffer = Signal(layout_len(write_fifo_layout))
-        #sync_cpu += [
-        #    If(write_fifo_front.readable & ~buffered,
-        #       fifo_buffer.eq(write_fifo_front.dout),
-        #       buffered.eq(1),
-        #       front_re.eq(1),
-        #    ),
-        #    If(front_re,
-        #       front_re.eq(0),
-        #    ),
-        #    If(buffered & write_fifo_back.writable,
-        #       back_we.eq(1),
-        #       buffered.eq(0),
-        #    ),
-        #    If(back_we,
-        #       back_we.eq(0),
-        #    ),
-        #]
-        #self.comb += [
-        #    write_fifo_front.re.eq(front_re),
-        #    write_fifo_back.we.eq(back_we),
-        #    write_fifo_back.din.eq(fifo_buffer),
-        #]
 
         # back-pressure from sys to cpu clock domain for RAW hazards
         self.submodules.write_fifo_back_readable_sync = BusSynchronizer(width = 1, idomain = "sys", odomain = cd_cpu)
@@ -229,13 +202,13 @@ class MC68040_FSM(Module):
                       NextState("Idle")
         )
         slave_fsm.act("Idle",
-                      NextValue(finishing, 0),
+                      NextValue(finishing, 0), # technically we should only drive for one-half cycle... use clock signal?
                       D_oe.eq(0),
-                      TA_oe.eq(finishing),
+                      TA_oe.eq(finishing & ClockSignal(cd_cpu)),
                       TA_o_n.eq(1),
-                      TEA_oe.eq(finishing),
+                      TEA_oe.eq(finishing & ClockSignal(cd_cpu)),
                       TEA_o_n.eq(1),
-                      TBI_oe.eq(finishing),
+                      TBI_oe.eq(finishing & ClockSignal(cd_cpu)),
                       TBI_o_n.eq(1),
                       If(my_mem_space & ~TS_i_n & RW_i_n & SIZ_i[0] & SIZ_i[1] & 0, # Burst read to memory, DEBUG FIXME DISABLED
                          # FIXME FIXME FIXME
@@ -280,6 +253,25 @@ class MC68040_FSM(Module):
                                 NextState("FBMemBurstWrite"),
                              ).Else(
                                 NextState("DelayFBMemBurstWrite"),
+                             )
+                      ).Elif((my_superslot_space | (my_slot_space & ~A_i[23])) & ~TS_i_n & RW_i_n & SIZ_i[0] & SIZ_i[1], # Burst read to (FB) memory
+                             TA_oe.eq(1),
+                             TA_o_n.eq(1),
+                             TEA_oe.eq(1),
+                             TEA_o_n.eq(1),
+                             TBI_oe.eq(1),
+                             TBI_o_n.eq(1),
+                             NextValue(burst_counter, 0), # '040 burst are aligned
+                             dram_native.cmd.we.eq(0),
+                             If(~write_fifo_back_readable_in_cpu, # previous write(s) done
+                                dram_native.cmd.valid.eq(1),
+                                If(dram_native.cmd.ready, # interface available
+                                   NextState("FBMemBurstReadWait"),
+                                ).Else(
+                                    NextState("DelayFBMemBurstReadWait"),
+                                ),
+                             ).Else(
+                                 NextState("DelayFBMemBurstReadWait"),
                              )
                       ).Elif((my_device_space & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1]), # burst Write through FIFO
                              TA_oe.eq(1),
@@ -388,7 +380,7 @@ class MC68040_FSM(Module):
                       If(write_fifo_front.writable,
                          write_fifo_front.we.eq(1), # write
                          If(SIZ_i == 0x3,
-                            TBI_o_n.eq(0), # don't burst write for now
+                            TBI_o_n.eq(0), # don't burst write here
                          ),
                          TA_o_n.eq(0),
                          NextValue(finishing, 1),
@@ -413,18 +405,18 @@ class MC68040_FSM(Module):
                       ),
         )
         slave_fsm.act("MemBurstRead",
-                      TA_oe.eq(0),
-                      TA_o_n.eq(1),
+                      TA_oe.eq(1),
+                      TA_o_n.eq(0),
                       TEA_oe.eq(1),
                       TEA_o_n.eq(1),
                       TBI_oe.eq(1),
                       TBI_o_n.eq(1),
                       D_oe.eq(1),
                       Case(burst_counter, {
-                          #0x0: D_rev_o.eq(dram_native.rdata.data[  0: 32]),
-                          0x1: D_rev_o.eq(dram_native.rdata.data[ 32: 64]),
-                          0x2: D_rev_o.eq(dram_native.rdata.data[ 64: 96]),
-                          0x3: D_rev_o.eq(dram_native.rdata.data[ 96:128]),
+                          #0x0: D_rev_o.eq(burst_buffer[  0: 32]),
+                          0x1: D_rev_o.eq(burst_buffer[ 32: 64]),
+                          0x2: D_rev_o.eq(burst_buffer[ 64: 96]),
+                          0x3: D_rev_o.eq(burst_buffer[ 96:128]),
                       }),
                       NextValue(burst_counter, burst_counter + 1),
                       If(burst_counter == 0x3,
@@ -478,6 +470,8 @@ class MC68040_FSM(Module):
                          NextState("Idle"),
                       )
         )
+
+        seen_fbburst = Signal()
         slave_fsm.act("DelayFBMemBurstWrite",
                       TA_oe.eq(1),
                       TA_o_n.eq(1),
@@ -490,7 +484,6 @@ class MC68040_FSM(Module):
                          NextState("FBMemBurstWrite"),
                       ),
         )
-        seen_fbburst = Signal() # DEBUG
         slave_fsm.act("FBMemBurstWrite",
                       TA_oe.eq(1),
                       TA_o_n.eq(0), # always TA here
@@ -514,8 +507,62 @@ class MC68040_FSM(Module):
                          dram_native.wdata.we.eq(2**len(dram_native.wdata.we)-1),
                          dram_native.wdata.valid.eq(1),
                          NextState("Idle"),
-                         NextValue(seen_fbburst, 1),
                       )
+        )
+        
+        slave_fsm.act("DelayFBMemBurstReadWait",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(1),
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      D_oe.eq(0),
+                      dram_native.cmd.we.eq(0),
+                      If(~write_fifo_back_readable_in_cpu, # previous write(s) done
+                         dram_native.cmd.valid.eq(1),
+                         If(dram_native.cmd.ready, # interface available
+                            NextState("FBMemBurstReadWait"),
+                         ),
+                      ),
+        )
+        slave_fsm.act("FBMemBurstReadWait",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(1),
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      D_oe.eq(1),
+                      dram_native.rdata.ready.eq(1),
+                      D_rev_o.eq(dram_native.rdata.data[  0: 32]),
+                      If(dram_native.rdata.valid,
+                         NextValue(burst_buffer, dram_native.rdata.data),
+                         TA_o_n.eq(0),
+                         NextValue(burst_counter, 1), 
+                         NextState("FBMemBurstRead"),
+                      ),
+        )
+        slave_fsm.act("FBMemBurstRead",
+                      TA_oe.eq(1),
+                      TA_o_n.eq(0),
+                      TEA_oe.eq(1),
+                      TEA_o_n.eq(1),
+                      TBI_oe.eq(1),
+                      TBI_o_n.eq(1),
+                      D_oe.eq(1),
+                      Case(burst_counter, {
+                          0x0: D_rev_o.eq(burst_buffer[  0: 32]),
+                          0x1: D_rev_o.eq(burst_buffer[ 32: 64]),
+                          0x2: D_rev_o.eq(burst_buffer[ 64: 96]),
+                          0x3: D_rev_o.eq(burst_buffer[ 96:128]),
+                      }),
+                      NextValue(burst_counter, burst_counter + 1),
+                      If(burst_counter == 0x3,
+                         NextValue(finishing, 1),
+                         NextValue(seen_fbburst, 1),
+                         NextState("Idle"),
+                      ),
         )
         
         # connect the write FIFO inputs
@@ -579,18 +626,32 @@ class MC68040_FSM(Module):
             led0.eq(~slave_fsm.ongoing("Idle")),
             led1.eq(wb_write.stb),
             led2.eq(wb_write.ack),
-            led3.eq(seen_fbburst), # led3.eq(slave_fsm.ongoing("MemBurstReadWait") | slave_fsm.ongoing("MemBurstRead") | slave_fsm.ongoing("MemBurstWrite")),
+            led3.eq(my_superslot_space),
             #led4.eq(0),
             #led5.eq(0),
             #led6.eq(write_fifo_front.writable),
             #led7.eq(write_fifo_back_readable_in_cpu),
             #led6.eq(0),
             #led7.eq(slave_fsm.ongoing("BurstWrite")),
-            led4.eq(~write_fifo_front.writable),
-            led5.eq(write_fifo_front.readable),
-            led6.eq(~write_fifo_back.writable),
-            led7.eq(write_fifo_back.readable),
+            #led4.eq(~write_fifo_front.writable),
+            #led5.eq(write_fifo_front.readable),
+            #led6.eq(~write_fifo_back.writable),
+            #led7.eq(write_fifo_back.readable),
+            #led4.eq(0),
+            #led5.eq(slave_fsm.ongoing("DelayFBMemBurstReadWait")),
+            #led6.eq(slave_fsm.ongoing("FBMemBurstReadWait")),
+            #led7.eq(slave_fsm.ongoing("FBMemBurstRead")),
+            led4.eq(0),
+            led5.eq(0),
+            led6.eq(0),
+            led7.eq(seen_fbburst),
         ]
+
+        if (False and (trace_inst_fifo != None)):
+            self.comb += [
+                trace_inst_fifo.din.eq(Cat(A_i[24:32], A_i[16:24], A_i[8:16], A_i[0:8])),
+                trace_inst_fifo.we.eq(dram_native.rdata.valid),
+            ]
         
         if (False and (trace_inst_fifo != None)):
             self.submodules.trace_fsm_1 = trace_fsm_1 = ClockDomainsRenamer(cd_cpu)(FSM(reset_state="Reset"))

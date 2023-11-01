@@ -271,9 +271,9 @@ class QuadraFPGA(SoCCore):
                            l2_cache_size = 0,
             )
             avail_sdram = self.bus.regions["main_ram"].size
-            #from sdram_init import DDR3FBInit
-            #self.submodules.sdram_init = DDR3FBInit(sys_clk_freq=sys_clk_freq, bitslip=1, delay=25)
-            #self.bus.add_master(name="DDR3Init", master=self.sdram_init.bus)
+            from sdram_init import DDR3FBInit
+            self.submodules.sdram_init = DDR3FBInit(sys_clk_freq=sys_clk_freq, bitslip=1, delay=25)
+            self.bus.add_master(name="DDR3Init", master=self.sdram_init.bus)
         else:
             avail_sdram = 256 * 1024 * 1024
             #self.add_ram("ram", origin=0x8f800000, size=2**16, mode="rw")
@@ -309,7 +309,7 @@ class QuadraFPGA(SoCCore):
         ###good_to_go = Signal()
         ###self.comb += [ good_to_go.eq((hold_reset_ctr == 0) & self.crg.locked & self.sdram_init.done) ]
         hold_reset = Signal()
-        self.comb += [ hold_reset.eq(~(hold_reset_ctr == 0) | ~self.crg.locked) ] # | ~self.sdram_init.done) ]
+        self.comb += [ hold_reset.eq(~(hold_reset_ctr == 0) | ~self.crg.locked | ~self.sdram_init.done) ]
         ## halt_n = platform.request("halt_3v3_n")
         ## self.comb += [ halt_n.eq(~hold_reset) ] # release the 68030 only when everything's fine
         #self.comb += [ halt_n.eq(1) ] # release the 68030 only when everything's fine
@@ -353,7 +353,7 @@ class QuadraFPGA(SoCCore):
                                                                         wb_read=self.wishbone_master_pds040,
                                                                         #wb_write=self.wishbone_writemaster_pds040,
                                                                         wb_write=wishbone_writemaster_sys,
-                                                                        dram_native=self.sdram.crossbar.get_port(mode="rw", data_width=128, clock_domain="cpu"),
+                                                                        dram_native=self.sdram.crossbar.get_port(mode="both", data_width=128, clock_domain="cpu"),
                                                                         cd_cpu="cpu",
                                                                         trace_inst_fifo=self.ziscreen_fifo)
         if (goblin):
