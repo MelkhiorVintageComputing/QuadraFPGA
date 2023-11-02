@@ -1,5 +1,6 @@
 Comment,Designator,Footprint
-0402WGF1002TCE,"R1,R4",Resistor_SMD:R_0402_1005Metric
+0402WGF0000TCE,R1,Resistor_SMD:R_0402_1005Metric
+0402WGF1002TCE,R4,Resistor_SMD:R_0402_1005Metric
 0402WGF6800TCE,R2,Resistor_SMD:R_0402_1005Metric
 10029449-111RLF,J2,For_SeeedStudio:HDMI_A_Amphenol_10029449-111
 77313-824-64LF,"JAB1,JCD1",For_SeeedStudio:PinHeader_2x32_P2.54mm_Vertical_For_SeeedStudio
