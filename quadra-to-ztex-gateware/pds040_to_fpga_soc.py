@@ -353,7 +353,8 @@ class QuadraFPGA(SoCCore):
                                                                         wb_read=self.wishbone_master_pds040,
                                                                         #wb_write=self.wishbone_writemaster_pds040,
                                                                         wb_write=wishbone_writemaster_sys,
-                                                                        dram_native=self.sdram.crossbar.get_port(mode="both", data_width=128, clock_domain="cpu"),
+                                                                        dram_native_r=self.sdram.crossbar.get_port(mode="read", data_width=128, clock_domain="cpu"),
+                                                                        dram_native_w=self.sdram.crossbar.get_port(mode="write", data_width=128, clock_domain="cpu"),
                                                                         cd_cpu="cpu",
                                                                         trace_inst_fifo=self.ziscreen_fifo)
         if (goblin):
