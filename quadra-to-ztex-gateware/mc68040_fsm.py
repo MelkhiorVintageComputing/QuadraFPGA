@@ -184,6 +184,7 @@ class MC68040_FSM(Module):
         self.comb += [
             write_fifo_front.re.eq(write_fifo_back.writable),
             write_fifo_back.we.eq(write_fifo_front.readable),
+            # The XOR with 0xFFFFFFFF here and in the FIFO output serves not logical purpose, other than it doesn't work without it!!!
             write_fifo_back.din.eq(write_fifo_front.dout ^ Cat(Signal(32, reset = 0), Signal(32, reset = 0xFFFFFFFF), Signal(4, reset = 0))),
         ]
 
@@ -236,36 +237,7 @@ class MC68040_FSM(Module):
                       TEA_o_n.eq(1),
                       TBI_oe.eq(finishing & ClockSignal(cd_cpu)),
                       TBI_o_n.eq(1),
-                      If(my_mem_space & ~TS_i_n & RW_i_n & SIZ_i[0] & SIZ_i[1] & 0, # Burst read to memory, DEBUG FIXME DISABLED
-                         # FIXME FIXME FIXME
-                         TA_oe.eq(1),
-                         TA_o_n.eq(1),
-                         TEA_oe.eq(1),
-                         TEA_o_n.eq(1),
-                         TBI_oe.eq(1),
-                         TBI_o_n.eq(1),
-                         If(~write_fifo_back_readable_in_cpu & ~write_fifo_front.readable & ~write_fifo_burst.readable, # previous write(s) done
-                            dram_native_r.cmd.valid.eq(1),
-                            If(dram_native_r.cmd.ready, # interface available
-                               NextState("MemBurstReadWait"),
-                            ),
-                         ),
-                      ).Elif(my_mem_space & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1] & 0, # Burst write to memory, DEBUG FIXME DISABLED
-                             # FIXME FIXME FIXME
-                             TA_oe.eq(1),
-                             TA_o_n.eq(1),
-                             TEA_oe.eq(1),
-                             TEA_o_n.eq(1),
-                             TBI_oe.eq(1),
-                             TBI_o_n.eq(1),
-                             #NextValue(A_latch, processed_ad),
-                             If(write_fifo_front.writable,
-                                NextValue(burst_counter, 1), # '040 burst are aligned
-                                write_fifo_front.we.eq(1), # write if there's space
-                                TA_o_n.eq(0), 
-                                NextState("MemBurstWrite"),
-                             ),
-                      ).Elif(my_slot_space & ~A_i[23] & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1], # Burst write to FB memory
+                      If(my_slot_space & ~A_i[23] & ~TS_i_n & ~RW_i_n & SIZ_i[0] & SIZ_i[1], # Burst write to FB memory
                              TA_oe.eq(1),
                              TA_o_n.eq(1),
                              TEA_oe.eq(1),
@@ -412,61 +384,6 @@ class MC68040_FSM(Module):
                          NextState("Idle"),
                       ),
         )
-        slave_fsm.act("MemBurstReadWait",
-                      TA_oe.eq(1),
-                      TA_o_n.eq(1),
-                      TEA_oe.eq(1),
-                      TEA_o_n.eq(1),
-                      TBI_oe.eq(1),
-                      TBI_o_n.eq(1),
-                      D_oe.eq(1),
-                      dram_native_r.rdata.ready.eq(1),
-                      D_rev_o.eq(dram_native_r.rdata.data[  0: 32]),
-                      NextValue(burst_buffer, dram_native_r.rdata.data),
-                      If(dram_native_r.rdata.valid,
-                         TA_o_n.eq(0),
-                         NextValue(burst_counter, 1), 
-                         NextState("MemBurstRead"),
-                      ),
-        )
-        slave_fsm.act("MemBurstRead",
-                      TA_oe.eq(1),
-                      TA_o_n.eq(0),
-                      TEA_oe.eq(1),
-                      TEA_o_n.eq(1),
-                      TBI_oe.eq(1),
-                      TBI_o_n.eq(1),
-                      D_oe.eq(1),
-                      Case(burst_counter, {
-                          #0x0: D_rev_o.eq(burst_buffer[  0: 32]),
-                          0x1: D_rev_o.eq(burst_buffer[ 32: 64]),
-                          0x2: D_rev_o.eq(burst_buffer[ 64: 96]),
-                          0x3: D_rev_o.eq(burst_buffer[ 96:128]),
-                      }),
-                      NextValue(burst_counter, burst_counter + 1),
-                      If(burst_counter == 0x3,
-                         NextValue(finishing, 1),
-                         NextState("Idle"),
-                      ),
-        )
-        slave_fsm.act("MemBurstWrite",
-                      TA_oe.eq(1),
-                      TA_o_n.eq(1),
-                      TEA_oe.eq(1),
-                      TEA_o_n.eq(1),
-                      TBI_oe.eq(1),
-                      TBI_o_n.eq(1),
-                      D_oe.eq(0),
-                      If(write_fifo_front.writable,
-                         NextValue(burst_counter, burst_counter + 1),
-                         write_fifo_front.we.eq(1), # write if there's space
-                         TA_o_n.eq(0),
-                         If(burst_counter == 0x3,
-                            NextValue(finishing, 1),
-                            NextState("Idle"),
-                         )
-                      ),
-        )
         slave_fsm.act("DelayBurstWrite",
                       TA_oe.eq(1),
                       TA_o_n.eq(1),
@@ -590,6 +507,7 @@ class MC68040_FSM(Module):
         )
         
         # connect the write FIFO inputs
+        # The XOR with 0xFFFFFFFF here and in the FIFO transition serves not logical purpose, other than it doesn't work without it!!!
         self.comb += [ write_fifo_front_din.data.eq(D_rev_i ^ Signal(32, reset = 0xFFFFFFFF)),
                        write_fifo_front_din.adr.eq(processed_ad + Cat(Signal(2,reset = 0), burst_counter)),
                        Case(SIZ_i, {
