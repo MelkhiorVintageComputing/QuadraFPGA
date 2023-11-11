@@ -95,7 +95,7 @@ _pds040_pds040_v1_0 = [
     ("A_3v3",              0, Pins("V9  U9  V7  U8  V6  V5  U7  U6  "
                                    "J18 K16 V4  J17 K15 T8  K13 J15 "
                                    "T5  J13 H15 R8  H14 J14 T4  G14 "
-                                   "H17 R7  G16 G17 U4  T6  U3  G18"), IOStandard("lvttl")),
+                                   "H17 R7  G16 G17 T6  U4  U3  G18"), IOStandard("lvttl")),
     ("D_3v3",              0, Pins("B16 L5  C15 D15 L6  A18 B18 M6  "
                                    "C17 C16 N6  E16 E15 R3  F14 F13 "
                                    "K6  T3  U2  U1  V2  G13 D17 V1  "

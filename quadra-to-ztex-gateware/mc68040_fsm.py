@@ -26,6 +26,7 @@ class MC68040_FSM(Module):
         TS_n = platform.request("ts_3v3_n") # Transfer Start, I
         TT = platform.request("tt_3v3") # 2, I
         TM = platform.request("tm_3v3") # 3 Transfer Modifier , I
+        MI_n = platform.request("mi_3v3_n") # Memory Inhibit, I
 
         A_i = Signal(32)
         #A_latch = Signal(32)
@@ -69,6 +70,10 @@ class MC68040_FSM(Module):
         
         TIP_CPU_i_n = Signal()
         self.comb += [ TIP_CPU_i_n.eq(TIP_CPU_n) ]
+
+        MI_i_n = Signal()
+        self.comb += [ MI_i_n.eq(MI_n) ]
+        
         
         #CIOUT_i_n = Signal(1)
         #self.comb += [ CIOUT_i_n.eq(CIOUT_n) ]
@@ -126,9 +131,14 @@ class MC68040_FSM(Module):
         
         my_mem_space = Signal()
         # As soons as I enable this at $2000_0000 to $2FFF_FFFF, some "chimes of death" occur...
-        #self.comb += [ my_mem_space.eq((A_i[28:32] == 0x2)) ] # 0x20 >> 4 == 0x2 # only 256 MiB
-        #self.comb += [ my_mem_space.eq((A_i[28:32] == 0x1)) ] # 0x10 >> 4 == 0x1 # only 256 MiB
-        self.comb += [ my_mem_space.eq(0), ]
+        # So djMEMC basically has 10 banks of up to 64 MiB, and checks for all of them
+        # on every systems, so from $0000_0000 to $27FF_FFFF
+        # So presumably we can live at $3000_0000
+        # However, the ROM code hardwires the 10 banks, and there's some configuration done to djMEMC
+        # So adding extra banks isn't going to be obvious...
+        # Also are we ASC-based ? That would mean SoundBuffer in high RAM, which we may interfere with due to higher read latency...
+        #self.comb += [ my_mem_space.eq(MI_i_n & (A_i[28:32] == 0x3)) ] # 0x30 >> 4 == 0x3 # only 256 MiB
+        self.comb += [ my_mem_space.eq(MI_i_n & 0), ]
         
         my_superslot_space = Signal()
         self.comb += [ my_superslot_space.eq((A_i[28:32] == 0xE)) ] # 0xE0 >> 4 == 0xE # fixme: abstract slot $E
@@ -486,7 +496,6 @@ class MC68040_FSM(Module):
                       )
         )
 
-        seen_fbburst = Signal()
         slave_fsm.act("DelayFBMemBurstWrite",
                       TA_oe.eq(1),
                       TA_o_n.eq(1),
@@ -522,7 +531,6 @@ class MC68040_FSM(Module):
                          #dram_native_r.wdata.we.eq(2**len(dram_native_r.wdata.we)-1),
                          #dram_native_r.wdata.valid.eq(1),
                          write_fifo_burst.we.eq(1),
-                         NextValue(seen_fbburst, 1), # DEBUG
                          NextState("Idle"),
                       )
         )
@@ -679,9 +687,9 @@ class MC68040_FSM(Module):
         
         self.comb += [
             led0.eq(~slave_fsm.ongoing("Idle")),
-            led1.eq(wb_write.stb),
-            led2.eq(wb_write.ack),
-            led3.eq(my_superslot_space),
+            led1.eq(0),
+            led2.eq(0),
+            led3.eq(0),
             #led4.eq(0),
             #led5.eq(0),
             #led6.eq(write_fifo_front.writable),
@@ -699,7 +707,7 @@ class MC68040_FSM(Module):
             led4.eq(0),
             led5.eq(0),
             led6.eq(0),
-            led7.eq(seen_fbburst),
+            led7.eq(0),
         ]
 
         if (False and (trace_inst_fifo != None)):
