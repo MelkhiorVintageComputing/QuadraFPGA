@@ -596,7 +596,7 @@ Text GLabel 1600 1650 0    50   Input ~ 0
 A18_3V3
 Text GLabel 1600 1550 0    50   Input ~ 0
 A15_3V3
-Text GLabel 9900 2050 2    50   Input ~ 0
+Text GLabel 7400 2050 0    50   Input ~ 0
 A28_3V3
 Text GLabel 1600 1950 0    50   Input ~ 0
 A27_3V3
@@ -630,7 +630,7 @@ Text GLabel 7400 3750 0    50   Input ~ 0
 HDMI_D2+
 Text GLabel 7400 3850 0    50   Input ~ 0
 HDMI_D2-
-Text GLabel 7400 2050 0    50   Input ~ 0
+Text GLabel 9900 2050 2    50   Input ~ 0
 A29_3V3
 Text GLabel 9900 2150 2    50   Input ~ 0
 A30_3V3
