@@ -250,6 +250,14 @@ class QuadraFPGA(SoCCore):
                                region_size = 0x00008000, # 32 KiB,
                                region_offset = (sector * 65536),
                                with_mmap=True, with_master=False)
+            try:
+                # get and set the signal if we're on 2.12
+                fx2_sloe = platform.request("fx2_sloe", 0)
+                self.comb += [ fx2_sloe.eq(1), ] # force the FX2 side of the GPIF/FIFO interface to read, so we can access the flash
+            except:
+                # if the signal is not defined, we're on a 2.13 and don't need it
+                self.comb += [ ]
+                # ignore
             print(f"$$$$$ ROM must be put in the config Flash at sector {sector} $$$$$\n");
 
         #from wb_test import WA2D
