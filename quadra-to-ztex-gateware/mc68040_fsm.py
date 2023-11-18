@@ -608,25 +608,71 @@ class MC68040_FSM(Module):
             led1.eq(0),
             led2.eq(0),
             led3.eq(0),
-            #led4.eq(0),
-            #led5.eq(0),
-            #led6.eq(write_fifo_front.writable),
-            #led7.eq(write_fifo_back_readable_in_cpu),
-            #led6.eq(0),
-            #led7.eq(slave_fsm.ongoing("BurstWrite")),
-            #led4.eq(~write_fifo_front.writable),
-            #led5.eq(write_fifo_front.readable),
-            #led6.eq(~write_fifo_back.writable),
-            #led7.eq(write_fifo_back.readable),
-            #led4.eq(0),
-            #led5.eq(slave_fsm.ongoing("DelayFBMemBurstReadWait")),
-            #led6.eq(slave_fsm.ongoing("FBMemBurstReadWait")),
-            #led7.eq(slave_fsm.ongoing("FBMemBurstRead")),
             led4.eq(0),
             led5.eq(0),
             led6.eq(0),
             led7.eq(0),
+            #led1.eq(slave_fsm.ongoing("DelayRead")),
+            #led2.eq(slave_fsm.ongoing("Read")),
+            #led3.eq(slave_fsm.ongoing("DelayWrite")),
+            #led4.eq(slave_fsm.ongoing("DelayBurstWrite")),
+            #led5.eq(slave_fsm.ongoing("BurstWrite")),
+            #led6.eq(slave_fsm.ongoing("DelayFBMemBurstWrite") | slave_fsm.ongoing("FBMemBurstWrite")),
+            #led7.eq(slave_fsm.ongoing("DelayFBMemBurstReadWait") | slave_fsm.ongoing("FBMemBurstReadWait") | slave_fsm.ongoing("FBMemBurstRead")),
         ]
+
+        # cycle time logic analyzer
+        if (False):
+            buffer_addr_bits = 25 # 32 MiWords or 128 MiB, 'cause we can!
+            buffer_data_bits = 16 # probably overkill ?
+            
+            check_adr_ctr = Signal(buffer_addr_bits)
+            latency = Signal(buffer_data_bits)
+            read_or_write = Signal()
+            
+            self.submodules.write_fifo_check_latency  = write_fifo_check_latency =  ClockDomainsRenamer({"read": "sys",  "write": cd_cpu})(AsyncFIFOBuffered(width=(buffer_data_bits+1+buffer_addr_bits), depth=8))
+            from litex.soc.interconnect import wishbone
+            wishbone_check = wishbone.Interface(data_width=soc.bus.data_width)
+            soc.bus.add_master(name="PDS040BridgeToWishbone_Check_Write", master=wishbone_check)
+            # deal with emptying the Write FIFO to the write WB
+            self.comb += [ wishbone_check.cyc.eq(write_fifo_check_latency.readable),
+                           wishbone_check.stb.eq(write_fifo_check_latency.readable),
+                           wishbone_check.we.eq(1),
+                           wishbone_check.adr.eq(Signal(30, reset = 0x20000000) | write_fifo_check_latency.dout[buffer_data_bits+1:buffer_data_bits+1+buffer_addr_bits]),
+                           wishbone_check.dat_w.eq(write_fifo_check_latency.dout[0:buffer_data_bits] | Cat(Signal(31, reset = 0), write_fifo_check_latency.dout[buffer_data_bits:buffer_data_bits+1])),
+                           wishbone_check.sel.eq(0xF),
+                           write_fifo_check_latency.re.eq(wishbone_check.ack),
+                           write_fifo_check_latency.din.eq(Cat(latency, read_or_write, check_adr_ctr)),
+            ]
+            record = Signal()
+            do_write = Signal()
+            timeout = Signal(10) # so we don't overload the wishbone
+            sync_cpu += [
+                If(timeout,
+                   timeout.eq(timeout - 1),
+                ),
+                If(do_write,
+                   do_write.eq(0),
+                ),
+                If(~TS_i_n & (A_i[30:31] == 0) & (timeout == 0), # start with address in memory range
+                   latency.eq(0),
+                   record.eq(1),
+                   read_or_write.eq(RW_i_n),
+                ).Else(
+                    latency.eq(latency + 1),
+                ),
+                If((~TA_i_n | ~TEA_i_n) & record,
+                   record.eq(0),
+                   do_write.eq(1),
+                   check_adr_ctr.eq(check_adr_ctr + 1),
+                   timeout.eq(1023),
+                ),
+            ]
+            self.comb += [
+                write_fifo_check_latency.we.eq(do_write),
+                led7.eq(record),
+            ]
+            
 
         if (False and (trace_inst_fifo != None)):
             self.comb += [

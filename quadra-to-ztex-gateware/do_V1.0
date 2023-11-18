@@ -11,3 +11,5 @@ python3 pds040_to_fpga_soc.py --build --csr-csv csr.csv --csr-json csr.json --va
 # --hdmi
 
 grep -A10 'Design Timing Summary' build/ztex213_pds040_V1_0/gateware/ztex213_pds040_V1_0_timing.rpt
+
+VintageBusFPGA_Common/check_sdram_init.sh
