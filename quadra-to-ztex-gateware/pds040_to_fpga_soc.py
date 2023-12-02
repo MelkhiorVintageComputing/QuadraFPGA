@@ -180,7 +180,7 @@ class QuadraFPGA(MacPeriphSoC):
         MacPeriphSoC.mac_add_declrom(self, version = version, flash = False, config_flash = config_flash)
         
         MacPeriphSoC.mac_add_sdram(self,
-                                   hwinit = True,
+                                   hwinit = False,
                                    sdram_dfii_base = 0xf0a02000 ,
                                    ddrphy_base = 0xf0a01000 ) # FIXME: can we get the appropriate value here ??? or are they only available after finalize ???
         
@@ -200,7 +200,7 @@ class QuadraFPGA(MacPeriphSoC):
         ###good_to_go = Signal()
         ###self.comb += [ good_to_go.eq((hold_reset_ctr == 0) & self.crg.locked & self.sdram_init.done) ]
         hold_reset = Signal()
-        self.comb += [ hold_reset.eq(~(hold_reset_ctr == 0) | ~self.crg.locked | ~self.sdram_init.done) ]
+        self.comb += [ hold_reset.eq(~(hold_reset_ctr == 0) | ~self.crg.locked) ]# | ~self.sdram_init.done) ]
         ## halt_n = platform.request("halt_3v3_n")
         ## self.comb += [ halt_n.eq(~hold_reset) ] # release the 68030 only when everything's fine
         #self.comb += [ halt_n.eq(1) ] # release the 68030 only when everything's fine

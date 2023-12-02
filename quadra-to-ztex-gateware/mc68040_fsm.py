@@ -654,7 +654,7 @@ class MC68040_FSM(Module):
                 If(do_write,
                    do_write.eq(0),
                 ),
-                If(~TS_i_n & (A_i[30:31] == 0) & (timeout == 0), # start with address in memory range
+                If(~TS_i_n & (A_i[30:32] == 0) & (timeout == 0), # start with address in memory range
                    latency.eq(0),
                    record.eq(1),
                    read_or_write.eq(RW_i_n),
