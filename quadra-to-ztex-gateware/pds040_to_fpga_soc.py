@@ -141,12 +141,10 @@ class _CRG(Module):
             
         
 class QuadraFPGA(MacPeriphSoC):
-    def __init__(self, variant, version, sys_clk_freq, config_flash, goblin, goblin_res, **kwargs):
+    def __init__(self, variant, version, sys_clk_freq, config_flash, goblin, goblin_res, use_goblin_alt, **kwargs):
         print(f"Building QuadraFPGA for board version {version}")
     
         self.platform = platform = ztex213_pds040.Platform(variant = variant, version = version)
-
-        use_goblin_alt = True
 
         hdmi = True
         
@@ -266,10 +264,16 @@ def main():
     parser.add_argument("--sys-clk-freq", default=100e6, help="QuadraFPGA system clock (default 100e6 = 100 MHz)")
     parser.add_argument("--config-flash", action="store_true", help="Configure the ROM to the internal Flash used for FPGA config")
     parser.add_argument("--goblin", action="store_true", help="add a goblin framebuffer")
-    parser.add_argument("--goblin-res", default="640x480@60Hz", help="Specify the goblin resolution")
+    parser.add_argument("--goblin-res", default="1920x1080@60Hz", help="Specify the goblin resolution")
+    parser.add_argument("--goblin-alt", action="store_true", help="Use alternate HDMI Phy with Audio support (requires Full HD resolution)")
     builder_args(parser)
     vivado_build_args(parser)
+    
     args = parser.parse_args()
+
+    if (args.goblin_alt and (goblin_res != "1920x1080@60Hz")):
+        print(" ***** ERROR ***** : Goblin Alt PHY currently only supports Full HD\n");
+        assert(False)
     
     soc = QuadraFPGA(**soc_core_argdict(args),
                      variant=args.variant,
@@ -277,7 +281,8 @@ def main():
                      sys_clk_freq=int(float(args.sys_clk_freq)),
                      config_flash=args.config_flash,
                      goblin=args.goblin,
-                     goblin_res=args.goblin_res)
+                     goblin_res=args.goblin_res,
+                     use_goblin_alt=args.goblin_alt)
 
     version_for_filename = args.version.replace(".", "_")
 
