@@ -37,7 +37,7 @@ from VintageBusFPGA_Common.fpga_blk_dma import *
 from VintageBusFPGA_Common.MacPeriphSoC import *
 
 # CRG ----------------------------------------------------------------------------------------------
-class _CRG(Module):
+class _CRG(Module, AutoCSR):
     def __init__(self, platform, version, sys_clk_freq,
                  goblin=False,
                  pix_clk=0):
@@ -127,6 +127,7 @@ class _CRG(Module):
             num_clk = num_clk + 1
             platform.add_platform_command("create_generated_clock -name hdmi5x_clk [get_pins {{{{MMCME2_ADV_{}/CLKOUT{}}}}}]".format(num_adv, num_clk))
             num_clk = num_clk + 1
+            video_pll.expose_drp()
                 
             self.comb += video_pll.reset.eq(~rst_cpu_n)
             #platform.add_false_path_constraints(self.cd_sys.clk, self.cd_vga.clk)
@@ -135,6 +136,8 @@ class _CRG(Module):
             num_clk = 0
 
             self.comb += [ locked.eq(video_pll.locked & pll_idelay.locked & pll.locked) ]
+
+            #video_pll.expose_drp()
         else:
             self.comb += [ locked.eq(pll_idelay.locked & pll.locked) ]
             
@@ -179,8 +182,9 @@ class QuadraFPGA(MacPeriphSoC):
         
         MacPeriphSoC.mac_add_sdram(self,
                                    hwinit = False,
-                                   sdram_dfii_base = 0xf0a02000 ,
-                                   ddrphy_base = 0xf0a01000 ) # FIXME: can we get the appropriate value here ??? or are they only available after finalize ???
+                                   sdram_dfii_base = 0xf0a02800,
+                                   ddrphy_base = 0xf0a01800,
+                                   version = version) # FIXME: can we get the appropriate value here ??? or are they only available after finalize ???
         
         if (goblin):
             MacPeriphSoC.mac_add_goblin_prelim(self)
@@ -268,12 +272,30 @@ def main():
     parser.add_argument("--goblin-alt", action="store_true", help="Use alternate HDMI Phy with Audio support (requires Full HD resolution)")
     builder_args(parser)
     vivado_build_args(parser)
-    
     args = parser.parse_args()
 
-    if (args.goblin_alt and (goblin_res != "1920x1080@60Hz")):
+    if (args.goblin_alt and (args.goblin_res != "1920x1080@60Hz")):
         print(" ***** ERROR ***** : Goblin Alt PHY currently only supports Full HD\n");
         assert(False)
+
+    if (True):
+        f = open("decl_rom_config.mak","w+")
+        hres = int(args.goblin_res.split("@")[0].split("x")[0])
+        vres = int(args.goblin_res.split("@")[0].split("x")[1])
+        f.write("TARGET=QUADRAFPGA\n")
+        f.write("FEATURES+= -DQUADRAFPGA")
+        # f.write(" -DENABLE_RAMDSK") # only NuBusFPGA for now
+        if (args.goblin_alt):
+            f.write(" -DENABLE_HDMIAUDIO") # no audio in litex-style not-hdmi phy
+        else:
+            f.write(" -DENABLE_HDMI_ALT_CHANGE");
+            if (args.version == "V1.0"):
+                f.write(" -DENABLE_HDMI_ALT_CHANGE_48MHZ");
+                
+        f.write("\n");
+        f.write(f"HRES={hres}\n");
+        f.write(f"VRES={vres}\n");
+        f.close()
     
     soc = QuadraFPGA(**soc_core_argdict(args),
                      variant=args.variant,
