@@ -10,4 +10,4 @@ This project was 'spun off' the [NuBusFPGA](https://github.com/rdolbeau/NuBusFPG
 
 ## Current status
 
-The HDMI (Highly Desirable Macintosh Interface) is working, with both video (single-hardware-res, multi-depth, windowboxed lower res) & audio working.
+The HDMI (Highly Desirable Macintosh Interface) is working, with both video (single-hardware-res, multi-depth, windowboxed lower res) & audio working. More details are available in the readme of the NuBusFPGA repository.
