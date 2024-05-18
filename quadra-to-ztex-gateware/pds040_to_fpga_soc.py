@@ -296,6 +296,11 @@ def main():
         f.write(f"HRES={hres}\n");
         f.write(f"VRES={vres}\n");
         f.close()
+
+    if (True):
+        f = open("board.inc", "w+")
+        f.write(f"            .string        \"QuadraFPGA {args.version}\\0\"        /*  revision level */")
+        f.close()
     
     soc = QuadraFPGA(**soc_core_argdict(args),
                      variant=args.variant,
