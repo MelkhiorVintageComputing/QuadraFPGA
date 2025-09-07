@@ -11,3 +11,8 @@ This project was 'spun off' the [NuBusFPGA](https://github.com/rdolbeau/NuBusFPG
 ## Current status
 
 The HDMI (Highly Desirable Macintosh Interface) is working, with both video (single-hardware-res, multi-depth, windowboxed lower res) & audio working. More details are available in the readme of the NuBusFPGA repository.
+
+
+## Known issue(s)
+
+* The Snoop Control signals (SC0 and SC1) aren't connected to the FPGA. They must be driven low ("Inhibit Snooping", Table 4-1 in the 040UM) by alternate bus master. This prevent the QuadraFPGA to be a bus master, as those signals are pulled high on the motherboard.
