@@ -130,7 +130,7 @@ class MC68040_FSM(Module):
         self.comb += [ my_slot_space.eq((A_i[24:32] == 0xFE)) ] # fixme: abstract slot $E
         
         my_mem_space = Signal()
-        # As soons as I enable this at $2000_0000 to $2FFF_FFFF, some "chimes of death" occur...
+        # As soon as I enable this at $2000_0000 to $2FFF_FFFF, some "chimes of death" occur...
         # So djMEMC basically has 10 banks of up to 64 MiB, and checks for all of them
         # on every systems, so from $0000_0000 to $27FF_FFFF
         # So presumably we can live at $3000_0000
